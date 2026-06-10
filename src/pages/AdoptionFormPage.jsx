@@ -6,20 +6,25 @@ import { db, auth } from "../firebase/firebase";
 import Sidebar from "../components/Sidebar";
 import TopBar from "../components/TopBar";
 
-const GEMINI_API_KEY = "AQ.Ab8RN6Ks7kXkMrAzFR9isZVGdRRDTTwEp0ttZRSDRUWEyRH0LA";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_API_KEY}`;
+const GROQ_API_KEY = "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";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-async function callGemini(prompt) {
-  const response = await fetch(GEMINI_URL, {
+async function callGroq(prompt) {
+  const response = await fetch(GROQ_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${GROQ_API_KEY}`,
+    },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }]
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7,
     }),
   });
   const data = await response.json();
   if (data.error) throw new Error(data.error.message);
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  return data.choices?.[0]?.message?.content ?? "";
 }
 
 export default function AdoptionFormPage() {
@@ -68,7 +73,7 @@ Pet profile:
 
 Rules:
 - Each question must be tailored to this specific pet's personality and needs
-- Mix of multiple choice (3 options) and short answer questions
+- Generate exactly 5 questions: 3 must be multiple choice (with 3 options each) and 2 must be short answer
 - Include a short AI context tag (3-5 words) explaining why this question matters for this pet
 - Return ONLY valid JSON, no markdown, no explanation, no backticks
 
@@ -89,7 +94,7 @@ Return this exact JSON structure:
   }
 ]`;
 
-        const text = await callGemini(prompt);
+        const text = await callGroq(prompt);
         const clean = text.replace(/```json|```/g, "").trim();
         const parsed = JSON.parse(clean);
         setQuestions(parsed);
@@ -134,7 +139,7 @@ Evaluate the applicant's suitability. Return ONLY valid JSON, no markdown, no ba
   "summary": "<2-3 sentence reasoning for the shelter owner>"
 }`;
 
-      const scoreText = await callGemini(scorePrompt);
+      const scoreText = await callGroq(scorePrompt);
       const scoreClean = scoreText.replace(/```json|```/g, "").trim();
       const result = JSON.parse(scoreClean);
       setAiResult(result);
@@ -161,35 +166,81 @@ Evaluate the applicant's suitability. Return ONLY valid JSON, no markdown, no ba
     }
   };
 
-  // Result screen
   if (submitted && aiResult) {
-    const scoreColor = aiResult.score >= 75 ? "#16A34A" : aiResult.score >= 50 ? "#F5A623" : "#EF4444";
-    const scoreBg = aiResult.score >= 75 ? "#DCFCE7" : aiResult.score >= 50 ? "#FFF3E0" : "#FEE2E2";
+    const score = aiResult.score;
+    const scoreColor = score >= 75 ? "#F5A623" : score >= 50 ? "#F5A623" : "#EF4444";
+    const label = score >= 75 ? "Good Fit" : score >= 50 ? "Possible Fit" : "Low Match";
+    const circumference = 2 * Math.PI * 54;
+    const filled = circumference - (circumference * score) / 100;
 
     return (
       <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "#F5F2EE", fontFamily: "'Nunito', sans-serif" }}>
         <Sidebar userName={userName} />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <TopBar />
-          <main className="flex-1 overflow-y-auto p-6 flex items-center justify-center">
-            <div className="max-w-lg w-full rounded-3xl p-10 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+          <main className="flex-1 overflow-y-auto p-6 flex items-start justify-center pt-10">
+            <div className="max-w-lg w-full rounded-3xl p-8 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+
+              {/* Party icon */}
               <div className="text-5xl mb-4">🎉</div>
+
               <h2 className="text-2xl font-black mb-2" style={{ color: "#3D2B1F" }}>Application submitted!</h2>
-              <p className="text-sm mb-6" style={{ color: "#9B8778" }}>Here's your AI compatibility result</p>
-              <div className="rounded-2xl p-6 mb-5" style={{ backgroundColor: scoreBg }}>
-                <p className="text-5xl font-black mb-1" style={{ color: scoreColor }}>
-                  {aiResult.score}<span className="text-2xl">/100</span>
-                </p>
-                <p className="font-bold text-sm" style={{ color: scoreColor }}>{aiResult.recommendation}</p>
+              <p className="text-sm mb-6 leading-relaxed" style={{ color: "#9B8778" }}>
+                {pet?.ownerId ? "The shelter" : "The owner"} has received your application for {name}.<br />
+                Here's your AI suitability score:
+              </p>
+
+              {/* Score card */}
+              <div className="rounded-2xl p-8 mb-6" style={{ backgroundColor: "#FFF8F0" }}>
+                {/* Circular score */}
+                <div className="flex items-center justify-center mb-4">
+                  <svg width="140" height="140" viewBox="0 0 140 140">
+                    {/* Background circle */}
+                    <circle cx="70" cy="70" r="54" fill="none" stroke="#EEE8E0" strokeWidth="10" />
+                    {/* Score arc */}
+                    <circle
+                      cx="70" cy="70" r="54"
+                      fill="none"
+                      stroke={scoreColor}
+                      strokeWidth="10"
+                      strokeLinecap="round"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={filled}
+                      transform="rotate(-90 70 70)"
+                    />
+                    {/* Score number */}
+                    <text x="70" y="65" textAnchor="middle" dominantBaseline="middle"
+                      style={{ fontSize: 32, fontWeight: 900, fill: "#3D2B1F", fontFamily: "'Nunito', sans-serif" }}>
+                      {score}
+                    </text>
+                    <text x="70" y="88" textAnchor="middle"
+                      style={{ fontSize: 13, fill: "#9B8778", fontFamily: "'Nunito', sans-serif" }}>
+                      /100
+                    </text>
+                  </svg>
+                </div>
+
+                <p className="text-xl font-black mb-2" style={{ color: "#3D2B1F" }}>{label}</p>
+                <p className="text-sm leading-relaxed" style={{ color: "#6B5E52" }}>{aiResult.summary}</p>
               </div>
-              <p className="text-sm leading-relaxed mb-6 text-left px-2" style={{ color: "#6B5E52" }}>{aiResult.summary}</p>
-              <button
-                onClick={() => navigate("/home")}
-                className="w-full py-3.5 rounded-2xl text-white font-black"
-                style={{ backgroundColor: "#F5A623" }}
-              >
-                Back to discover
-              </button>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => navigate("/home")}
+                  className="flex-1 py-3.5 rounded-2xl text-sm font-bold transition"
+                  style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}
+                >
+                  Back to discover
+                </button>
+                <button
+                  onClick={() => navigate("/messages")}
+                  className="flex-1 py-3.5 rounded-2xl text-sm font-bold text-white transition"
+                  style={{ backgroundColor: "#F5A623" }}
+                >
+                  Message shelter
+                </button>
+              </div>
             </div>
           </main>
         </div>
@@ -204,11 +255,7 @@ Evaluate the applicant's suitability. Return ONLY valid JSON, no markdown, no ba
         <TopBar />
         <main className="flex-1 overflow-y-auto p-6">
 
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1 text-sm font-semibold mb-4"
-            style={{ color: "#6B5E52" }}
-          >
+          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-semibold mb-4" style={{ color: "#6B5E52" }}>
             ‹ Back
           </button>
 
@@ -219,7 +266,6 @@ Evaluate the applicant's suitability. Return ONLY valid JSON, no markdown, no ba
             Answer all {questions.length} questions below, then submit your application.
           </p>
 
-          {/* Progress bar */}
           <div className="max-w-3xl mb-6">
             <p className="text-xs font-semibold mb-1.5" style={{ color: "#9B8778" }}>
               {answeredCount} of {questions.length} answered
@@ -241,7 +287,7 @@ Evaluate the applicant's suitability. Return ONLY valid JSON, no markdown, no ba
                 <div key={i} className="rounded-2xl p-6 mb-4 animate-pulse" style={{ backgroundColor: "white", height: 180 }} />
               ))}
               <p className="text-center text-sm mt-2" style={{ color: "#9B8778" }}>
-                ✨ Gemini is generating questions tailored to {name}...
+                ✨ AI is generating questions tailored to {name}...
               </p>
             </div>
           ) : (
@@ -249,16 +295,12 @@ Evaluate the applicant's suitability. Return ONLY valid JSON, no markdown, no ba
               {questions.map((q) => (
                 <div key={q.id} className="rounded-2xl p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                   <div className="flex items-center gap-3 mb-3">
-                    <span
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-black shrink-0"
-                      style={{ backgroundColor: "#FFF3E0", color: "#F5A623" }}
-                    >
+                    <span className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-black shrink-0"
+                      style={{ backgroundColor: "#FFF3E0", color: "#F5A623" }}>
                       {q.id}
                     </span>
-                    <span
-                      className="text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1"
-                      style={{ backgroundColor: "#FFF3E0", color: "#F5A623" }}
-                    >
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1"
+                      style={{ backgroundColor: "#FFF3E0", color: "#F5A623" }}>
                       ✨ AI · {q.context}
                     </span>
                   </div>
@@ -266,20 +308,15 @@ Evaluate the applicant's suitability. Return ONLY valid JSON, no markdown, no ba
                   <p className="font-black text-base mb-4" style={{ color: "#3D2B1F" }}>{q.question}</p>
 
                   {q.type === "multiple_choice" && q.options?.map((opt) => (
-                    <button
-                      key={opt}
-                      onClick={() => handleAnswer(q.id, opt)}
+                    <button key={opt} onClick={() => handleAnswer(q.id, opt)}
                       className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl mb-2 text-sm font-semibold text-left transition"
                       style={{
                         border: answers[q.id] === opt ? "1.5px solid #F5A623" : "1.5px solid #EEE8E0",
                         backgroundColor: answers[q.id] === opt ? "#FFF3E0" : "white",
                         color: answers[q.id] === opt ? "#F5A623" : "#6B5E52",
-                      }}
-                    >
-                      <span
-                        className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0"
-                        style={{ borderColor: answers[q.id] === opt ? "#F5A623" : "#D1C9C0" }}
-                      >
+                      }}>
+                      <span className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0"
+                        style={{ borderColor: answers[q.id] === opt ? "#F5A623" : "#D1C9C0" }}>
                         {answers[q.id] === opt && (
                           <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#F5A623" }} />
                         )}
@@ -289,9 +326,7 @@ Evaluate the applicant's suitability. Return ONLY valid JSON, no markdown, no ba
                   ))}
 
                   {q.type === "short_answer" && (
-                    <textarea
-                      rows={3}
-                      placeholder="Type your answer here..."
+                    <textarea rows={3} placeholder="Type your answer here..."
                       value={answers[q.id] ?? ""}
                       onChange={(e) => handleAnswer(q.id, e.target.value)}
                       className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none transition"
@@ -307,15 +342,13 @@ Evaluate the applicant's suitability. Return ONLY valid JSON, no markdown, no ba
               ))}
 
               {questions.length > 0 && (
-                <button
-                  onClick={handleSubmit}
+                <button onClick={handleSubmit}
                   disabled={answeredCount < questions.length || submitting}
                   className="w-full py-4 rounded-2xl text-white font-black text-base transition mt-2"
                   style={{
                     backgroundColor: answeredCount < questions.length ? "#F8C97A" : "#F5A623",
                     cursor: answeredCount < questions.length ? "not-allowed" : "pointer",
-                  }}
-                >
+                  }}>
                   {submitting ? "Submitting & scoring..." : `Submit application for ${name}`}
                 </button>
               )}
