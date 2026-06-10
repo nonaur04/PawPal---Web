@@ -5,6 +5,8 @@ import PetDetailPage from "./pages/PetDetailPage";
 import AdoptionIntroPage from "./pages/AdoptionIntroPage";
 import AdoptionFormPage from "./pages/AdoptionFormPage";
 import PostPetPage from "./pages/PostPetPage";
+import MyPetDetailPage from "./pages/MyPetDetailPage";
+import EditPetPage from "./pages/EditPetPage";
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
       <Route path="/adopt-intro/:id/:petName" element={<AdoptionIntroPage />} />
       <Route path="/apply/:id/:petName" element={<AdoptionFormPage />} />
       <Route path="/post-pet" element={<PostPetPage />} />
+      <Route path="/my-pet/:id" element={<MyPetDetailPage />} />
+      <Route path="/edit-pet/:id" element={<EditPetPage />} />
     </Routes>
   );
 }

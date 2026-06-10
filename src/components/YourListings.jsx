@@ -1,6 +1,10 @@
+import { useNavigate } from "react-router-dom";
+
 const GENDER_ICON = { male: "♂", female: "♀" };
 
 export default function YourListings({ listings }) {
+  const navigate = useNavigate();
+
   return (
     <div className="mb-8">
       <div className="flex items-end justify-between mb-1">
@@ -17,14 +21,22 @@ export default function YourListings({ listings }) {
         {listings.map((pet) => (
           <div
             key={pet.id}
+            onClick={() => navigate(`/my-pet/${pet.id}`)}
             className="rounded-2xl overflow-hidden cursor-pointer transition hover:scale-[1.02]"
             style={{ width: 210, backgroundColor: "white", border: "1px solid #EEE8E0" }}
           >
             <div
               className="relative flex items-center justify-center"
-              style={{ height: 160, backgroundColor: pet.bg, backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,255,255,0.18) 8px, rgba(255,255,255,0.18) 16px)" }}
+              style={{
+                height: 160,
+                backgroundColor: pet.bg,
+                backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,255,255,0.18) 8px, rgba(255,255,255,0.18) 16px)",
+              }}
             >
-              <span style={{ fontSize: 64 }}>{pet.emoji}</span>
+              {pet.photoUrl
+                ? <img src={pet.photoUrl} alt={pet.name} className="w-full h-full object-cover" />
+                : <span style={{ fontSize: 64 }}>{pet.emoji}</span>
+              }
               <span
                 className="absolute top-3 left-3 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1"
                 style={{ backgroundColor: "#DCFCE7", color: "#16A34A" }}
@@ -47,6 +59,7 @@ export default function YourListings({ listings }) {
 
         {/* Post another pet */}
         <div
+          onClick={() => navigate("/post-pet")}
           className="rounded-2xl flex flex-col items-center justify-center cursor-pointer transition hover:scale-[1.02]"
           style={{ width: 210, height: 240, backgroundColor: "white", border: "1.5px dashed #F5A623" }}
         >
