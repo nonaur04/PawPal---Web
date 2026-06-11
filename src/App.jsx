@@ -10,6 +10,11 @@ import EditPetPage from "./pages/EditPetPage";
 import MyApplicationsPage from "./pages/MyApplicationsPage";
 import ApplicationDetailPage from "./pages/ApplicationDetailPage";
 import BrowseAllPetsPage from "./pages/BrowseAllPetsPage";
+import ReportsPage from "./pages/ReportsPage";
+import MyStrayReportsPage from "./pages/MyStrayReportsPage";
+import AllStrayReportsPage from "./pages/AllStrayReportsPage";
+import MyLostPetsPage from "./pages/MyLostPetsPage";
+import AllLostPetsPage from "./pages/AllLostPetsPage";
 
 function App() {
   return (
@@ -25,6 +30,11 @@ function App() {
       <Route path="/applications" element={<MyApplicationsPage />} />
       <Route path="/application/:id" element={<ApplicationDetailPage />} />
       <Route path="/browse" element={<BrowseAllPetsPage />} />
+      <Route path="/reports" element={<ReportsPage />} />
+      <Route path="/reports/my-strays" element={<MyStrayReportsPage />} />
+      <Route path="/reports/all-strays" element={<AllStrayReportsPage />} />
+      <Route path="/reports/my-lost" element={<MyLostPetsPage />} />
+      <Route path="/reports/all-lost" element={<AllLostPetsPage />} />
     </Routes>
   );
 }
