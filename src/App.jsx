@@ -20,6 +20,7 @@ import NewLostReportPage from "./pages/NewLostReportPage";
 import StrayReportDetailPage from "./pages/StrayReportDetailPage";
 import LostReportDetailPage from "./pages/LostReportDetailPage";
 import EditLostReportPage from "./pages/EditLostReportPage";
+import MessagesPage from "./pages/MessagesPage";
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
       <Route path="/reports/stray/:id" element={<StrayReportDetailPage />} />
       <Route path="/reports/lost/:id" element={<LostReportDetailPage />} />
       <Route path="/reports/edit-lost/:id" element={<EditLostReportPage />} />
+      <Route path="/messages" element={<MessagesPage />} />
     </Routes>
   );
 }
