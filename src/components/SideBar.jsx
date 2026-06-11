@@ -1,17 +1,18 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 
 const NAV = [
-  { icon: "🏠", label: "Discover", path: "/home", active: true },
-  { icon: "📋", label: "My Applications", path: "/applications", badge: null },
+  { icon: "🏠", label: "Discover", path: "/home" },
+  { icon: "📋", label: "My Applications", path: "/applications" },
   { icon: "⚠️", label: "Reports", path: "/reports" },
-  { icon: "💬", label: "Messages", path: "/messages", badge: null },
+  { icon: "💬", label: "Messages", path: "/messages" },
   { icon: "🏥", label: "Vet Near Me", path: "/vet" },
 ];
 
 export default function Sidebar({ userName }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -33,33 +34,36 @@ export default function Sidebar({ userName }) {
 
         {/* Nav */}
         <nav className="space-y-1">
-          {NAV.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => navigate(item.path)}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition"
-              style={{
-                backgroundColor: item.active ? "#FFF3E0" : "transparent",
-                color: item.active ? "#F5A623" : "#6B5E52",
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
-              </div>
-              {item.badge && (
-                <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "#F5A623", color: "white" }}>
-                  {item.badge}
-                </span>
-              )}
-            </button>
-          ))}
+          {NAV.map((item) => {
+            const isActive = location.pathname === item.path ||
+              (item.path !== "/home" && location.pathname.startsWith(item.path));
+            return (
+              <button
+                key={item.label}
+                onClick={() => navigate(item.path)}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition"
+                style={{
+                  backgroundColor: isActive ? "#FFF3E0" : "transparent",
+                  color: isActive ? "#F5A623" : "#6B5E52",
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <span>{item.icon}</span>
+                  <span>{item.label}</span>
+                </div>
+              </button>
+            );
+          })}
         </nav>
       </div>
 
       {/* Bottom */}
       <div>
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold mb-1 transition hover:bg-gray-50" style={{ color: "#6B5E52" }}>
+        <button
+          onClick={() => navigate("/profile")}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold mb-1 transition hover:bg-gray-50"
+          style={{ color: "#6B5E52" }}
+        >
           <span>👤</span> Profile
         </button>
         <button

@@ -7,6 +7,9 @@ import AdoptionFormPage from "./pages/AdoptionFormPage";
 import PostPetPage from "./pages/PostPetPage";
 import MyPetDetailPage from "./pages/MyPetDetailPage";
 import EditPetPage from "./pages/EditPetPage";
+import MyApplicationsPage from "./pages/MyApplicationsPage";
+import ApplicationDetailPage from "./pages/ApplicationDetailPage";
+import BrowseAllPetsPage from "./pages/BrowseAllPetsPage";
 
 function App() {
   return (
@@ -19,6 +22,9 @@ function App() {
       <Route path="/post-pet" element={<PostPetPage />} />
       <Route path="/my-pet/:id" element={<MyPetDetailPage />} />
       <Route path="/edit-pet/:id" element={<EditPetPage />} />
+      <Route path="/applications" element={<MyApplicationsPage />} />
+      <Route path="/application/:id" element={<ApplicationDetailPage />} />
+      <Route path="/browse" element={<BrowseAllPetsPage />} />
     </Routes>
   );
 }

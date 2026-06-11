@@ -177,11 +177,13 @@ export default function HomePage() {
                 title="Pets Near You"
                 subtitle="Within 30 km"
                 pets={nearby.map(toCardPet)}
+                browseType="nearby"
               />
               <PetSection
                 title="Based on your preference"
                 subtitle="Cats that match your saved preferences"
                 pets={preference.map(toCardPet)}
+                browseType="preference"
               />
               <YourListings listings={userPets.map(toListingPet)} />
             </>
