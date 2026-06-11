@@ -15,6 +15,11 @@ import MyStrayReportsPage from "./pages/MyStrayReportsPage";
 import AllStrayReportsPage from "./pages/AllStrayReportsPage";
 import MyLostPetsPage from "./pages/MyLostPetsPage";
 import AllLostPetsPage from "./pages/AllLostPetsPage";
+import NewStrayReportPage from "./pages/NewStrayReportPage";
+import NewLostReportPage from "./pages/NewLostReportPage";
+import StrayReportDetailPage from "./pages/StrayReportDetailPage";
+import LostReportDetailPage from "./pages/LostReportDetailPage";
+import EditLostReportPage from "./pages/EditLostReportPage";
 
 function App() {
   return (
@@ -35,6 +40,11 @@ function App() {
       <Route path="/reports/all-strays" element={<AllStrayReportsPage />} />
       <Route path="/reports/my-lost" element={<MyLostPetsPage />} />
       <Route path="/reports/all-lost" element={<AllLostPetsPage />} />
+      <Route path="/reports/new-stray" element={<NewStrayReportPage />} />
+      <Route path="/reports/new-lost" element={<NewLostReportPage />} />
+      <Route path="/reports/stray/:id" element={<StrayReportDetailPage />} />
+      <Route path="/reports/lost/:id" element={<LostReportDetailPage />} />
+      <Route path="/reports/edit-lost/:id" element={<EditLostReportPage />} />
     </Routes>
   );
 }
