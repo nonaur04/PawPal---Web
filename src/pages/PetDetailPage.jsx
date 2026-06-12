@@ -266,14 +266,8 @@ export default function PetDetailPage() {
 
               <div className="flex gap-3">
                 <button
-                  className="flex-1 py-3.5 rounded-xl text-sm font-bold transition"
-                  style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}
-                >
-                  Message shelter
-                </button>
-                <button
                   onClick={() => navigate(`/adopt-intro/${pet.id}/${encodeURIComponent(pet.name)}`)}
-                  className="flex-[2] py-3.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition"
+                  className="w-full py-3.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition"
                   style={{ backgroundColor: "#F5A623" }}
                 >
                   🤍 Apply to adopt {pet.name}

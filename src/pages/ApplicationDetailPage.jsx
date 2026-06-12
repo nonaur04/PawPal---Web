@@ -166,7 +166,7 @@ export default function ApplicationDetailPage() {
               <StatusBadge status={application.status} />
             </div>
             <button
-              onClick={() => navigate("/messages")}
+              onClick={() => navigate(`/messages?with=${application.ownerId}&pet=${encodeURIComponent(application.petName)}`)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white"
               style={{ backgroundColor: "#F5A623" }}
             >
