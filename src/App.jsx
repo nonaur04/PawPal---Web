@@ -21,6 +21,9 @@ import StrayReportDetailPage from "./pages/StrayReportDetailPage";
 import LostReportDetailPage from "./pages/LostReportDetailPage";
 import EditLostReportPage from "./pages/EditLostReportPage";
 import MessagesPage from "./pages/MessagesPage";
+import VetNearMePage from "./pages/VetNearMePage";
+import ReviewApplicantPage from "./pages/ReviewApplicantPage";
+import ProfilePage from "./pages/ProfilePage";
 
 function App() {
   return (
@@ -47,6 +50,9 @@ function App() {
       <Route path="/reports/lost/:id" element={<LostReportDetailPage />} />
       <Route path="/reports/edit-lost/:id" element={<EditLostReportPage />} />
       <Route path="/messages" element={<MessagesPage />} />
+      <Route path="/vet-near-me" element={<VetNearMePage />} />
+      <Route path="/review-applicant/:id" element={<ReviewApplicantPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
     </Routes>
   );
 }

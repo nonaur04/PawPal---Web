@@ -48,6 +48,7 @@ export default function HomePage() {
   const [activeSpecies, setActiveSpecies] = useState("All");
   const [allPets, setAllPets] = useState([]);
   const [userPets, setUserPets] = useState([]);
+  const [applicantCounts, setApplicantCounts] = useState({});
   const [userLocation, setUserLocation] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -112,6 +113,16 @@ export default function HomePage() {
 
         setAllPets(withDistance);
         setUserPets(mine);
+
+        // Fetch real applicant counts
+        const appsSnap = await getDocs(collection(db, "applications"));
+        const allApps = appsSnap.docs.map((d) => d.data());
+        setApplicantCounts(
+          mine.reduce((acc, p) => {
+            acc[p.id] = allApps.filter((a) => a.petId === p.id).length;
+            return acc;
+          }, {})
+        );
       } catch (err) {
         console.error("Failed to fetch pets:", err);
       } finally {
@@ -153,7 +164,7 @@ export default function HomePage() {
     age: formatAge(p.ageYears, p.ageMonths),
     gender: p.gender,
     status: p.status === "available" ? "Available" : p.status,
-    applicants: 0, // applicants count would need a separate query
+    applicants: applicantCounts[p.id] ?? 0,
     photoUrl: p.photoUrls?.[0] ?? null,
     bg: SPECIES_BG[p.species?.toLowerCase()] ?? "#F9BFBF",
     emoji: SPECIES_EMOJI[p.species?.toLowerCase()] ?? "🐾",
