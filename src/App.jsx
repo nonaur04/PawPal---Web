@@ -1,34 +1,39 @@
 import { Routes, Route } from "react-router-dom";
-import LoginPage from "./pages/LoginPage";
-import HomePage from "./pages/HomePage";
-import PetDetailPage from "./pages/PetDetailPage";
-import AdoptionIntroPage from "./pages/AdoptionIntroPage";
-import AdoptionFormPage from "./pages/AdoptionFormPage";
-import PostPetPage from "./pages/PostPetPage";
-import MyPetDetailPage from "./pages/MyPetDetailPage";
-import EditPetPage from "./pages/EditPetPage";
-import MyApplicationsPage from "./pages/MyApplicationsPage";
-import ApplicationDetailPage from "./pages/ApplicationDetailPage";
-import BrowseAllPetsPage from "./pages/BrowseAllPetsPage";
-import ReportsPage from "./pages/ReportsPage";
-import MyStrayReportsPage from "./pages/MyStrayReportsPage";
-import AllStrayReportsPage from "./pages/AllStrayReportsPage";
-import MyLostPetsPage from "./pages/MyLostPetsPage";
-import AllLostPetsPage from "./pages/AllLostPetsPage";
-import NewStrayReportPage from "./pages/NewStrayReportPage";
-import NewLostReportPage from "./pages/NewLostReportPage";
-import StrayReportDetailPage from "./pages/StrayReportDetailPage";
-import LostReportDetailPage from "./pages/LostReportDetailPage";
-import EditLostReportPage from "./pages/EditLostReportPage";
-import MessagesPage from "./pages/MessagesPage";
-import VetNearMePage from "./pages/VetNearMePage";
-import ReviewApplicantPage from "./pages/ReviewApplicantPage";
-import ProfilePage from "./pages/ProfilePage";
-import SettingsPage from "./pages/SettingsPage";
+import LoginPage from "./user-pages/LoginPage";
+import HomePage from "./user-pages/HomePage";
+import PetDetailPage from "./user-pages/PetDetailPage";
+import AdoptionIntroPage from "./user-pages/AdoptionIntroPage";
+import AdoptionFormPage from "./user-pages/AdoptionFormPage";
+import PostPetPage from "./user-pages/PostPetPage";
+import MyPetDetailPage from "./user-pages/MyPetDetailPage";
+import EditPetPage from "./user-pages/EditPetPage";
+import MyApplicationsPage from "./user-pages/MyApplicationsPage";
+import ApplicationDetailPage from "./user-pages/ApplicationDetailPage";
+import BrowseAllPetsPage from "./user-pages/BrowseAllPetsPage";
+import ReportsPage from "./user-pages/ReportsPage";
+import MyStrayReportsPage from "./user-pages/MyStrayReportsPage";
+import AllStrayReportsPage from "./user-pages/AllStrayReportsPage";
+import MyLostPetsPage from "./user-pages/MyLostPetsPage";
+import AllLostPetsPage from "./user-pages/AllLostPetsPage";
+import NewStrayReportPage from "./user-pages/NewStrayReportPage";
+import NewLostReportPage from "./user-pages/NewLostReportPage";
+import StrayReportDetailPage from "./user-pages/StrayReportDetailPage";
+import LostReportDetailPage from "./user-pages/LostReportDetailPage";
+import EditLostReportPage from "./user-pages/EditLostReportPage";
+import MessagesPage from "./user-pages/MessagesPage";
+import VetNearMePage from "./user-pages/VetNearMePage";
+import ReviewApplicantPage from "./user-pages/ReviewApplicantPage";
+import ProfilePage from "./user-pages/ProfilePage";
+import SettingsPage from "./user-pages/SettingsPage";
+
+// Shelter
+import ShelterDashboardPage from "./user-pages/ShelterDashboardPage";
 
 function App() {
   return (
     <Routes>
+
+      // Normal User
       <Route path="/" element={<LoginPage />} />
       <Route path="/home" element={<HomePage />} />
       <Route path="/pet/:id" element={<PetDetailPage />} />
@@ -55,6 +60,9 @@ function App() {
       <Route path="/review-applicant/:id" element={<ReviewApplicantPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/settings" element={<SettingsPage />} />
+
+      // Shelter
+      <Route path="/shelter/dashboard" element={<ShelterDashboardPage />} />
     </Routes>
   );
 }
