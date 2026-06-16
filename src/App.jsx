@@ -27,7 +27,7 @@ import ProfilePage from "./user-pages/ProfilePage";
 import SettingsPage from "./user-pages/SettingsPage";
 
 // Shelter
-import ShelterDashboardPage from "./user-pages/ShelterDashboardPage";
+import ShelterDashboardPage from "./shelter-pages/ShelterDashboardPage";
 
 function App() {
   return (
