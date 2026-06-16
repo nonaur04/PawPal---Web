@@ -24,6 +24,7 @@ import MessagesPage from "./pages/MessagesPage";
 import VetNearMePage from "./pages/VetNearMePage";
 import ReviewApplicantPage from "./pages/ReviewApplicantPage";
 import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
 
 function App() {
   return (
@@ -53,6 +54,7 @@ function App() {
       <Route path="/vet-near-me" element={<VetNearMePage />} />
       <Route path="/review-applicant/:id" element={<ReviewApplicantPage />} />
       <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/settings" element={<SettingsPage />} />
     </Routes>
   );
 }

@@ -67,7 +67,7 @@ export default function Sidebar({ userName }) {
           <span>👤</span> Profile
         </button>
         <button
-          onClick={handleLogout}
+          onClick={() => navigate("/settings")}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold mb-4 transition hover:bg-gray-50"
           style={{ color: "#6B5E52" }}
         >
