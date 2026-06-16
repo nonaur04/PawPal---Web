@@ -1,4 +1,6 @@
-export default function BrandingPanel() {
+export default function BrandingPanel({ variant = "login" }) {
+  const isRegister = variant === "register";
+
   return (
     <div
       className="flex w-3/5 relative overflow-hidden flex-col justify-between p-10"
@@ -36,14 +38,35 @@ export default function BrandingPanel() {
 
       {/* Hero */}
       <div className="relative z-10">
-        <h1 className="text-5xl font-black leading-tight mb-5" style={{ color: "#3D2B1F", fontFamily: "'Nunito', sans-serif" }}>
-          Find a friend.<br />Change a life.{" "}
-          <span className="inline-block">🐾</span>
-        </h1>
-        <p className="text-base leading-relaxed max-w-xs" style={{ color: "#7A6654" }}>
-          One PawPal account for adopters and shelters alike. Sign in
-          and we'll take you to the right place.
-        </p>
+        {isRegister ? (
+          <>
+            <h1
+              className="text-5xl font-black leading-tight mb-5"
+              style={{ color: "#3D2B1F", fontFamily: "'Nunito', sans-serif" }}
+            >
+              Join PawPal today.{" "}
+              <span className="inline-block">🐾</span>
+            </h1>
+            <p className="text-base leading-relaxed max-w-xs" style={{ color: "#7A6654" }}>
+              Whether you want to adopt a new friend or run a shelter, you
+              start in the same place — just pick your role.
+            </p>
+          </>
+        ) : (
+          <>
+            <h1
+              className="text-5xl font-black leading-tight mb-5"
+              style={{ color: "#3D2B1F", fontFamily: "'Nunito', sans-serif" }}
+            >
+              Find a friend.<br />Change a life.{" "}
+              <span className="inline-block">🐾</span>
+            </h1>
+            <p className="text-base leading-relaxed max-w-xs" style={{ color: "#7A6654" }}>
+              One PawPal account for adopters and shelters alike. Sign in
+              and we'll take you to the right place.
+            </p>
+          </>
+        )}
       </div>
 
       {/* Footer */}

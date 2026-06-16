@@ -36,7 +36,7 @@ export default function LoginForm() {
       const role = userDoc.data().role;
 
       if (role === "shelter") {
-        navigate("/dashboard");
+        navigate("/shelter/dashboard");
       } else {
         navigate("/home");
       }

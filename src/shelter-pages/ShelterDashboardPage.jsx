@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth, db } from "../firebase";
+import { auth, db } from "../firebase/firebase";
 import {
   collection,
   query,
@@ -270,8 +270,8 @@ export default function ShelterDashboardPage() {
       const userDoc = await getDoc(doc(db, "users", user.uid));
       if (userDoc.exists()) {
         const data = userDoc.data();
-        setUserName(data.name || "Manager");
-        setShelterName(data.shelterName || data.name || "Your Shelter");
+        setUserName(data.fullName || data.name || "Manager");
+        setShelterName(data.orgName || data.shelterName || data.fullName || "Your Shelter");
       }
 
       const uid = user.uid;
@@ -812,7 +812,7 @@ export default function ShelterDashboardPage() {
                             )}
                           </div>
                           <p className="text-xs mt-0.5" style={{ color: "#9B8778" }}>
-                            📍 {r.location || "Unknown location"} · {timeAgo(r.createdAt)}
+                            📍 {typeof r.location === "string" ? r.location : "Unknown location"} · {timeAgo(r.createdAt)}
                           </p>
                         </div>
                         <StatusBadge status={status} />

@@ -1,5 +1,10 @@
 import { Routes, Route } from "react-router-dom";
-import LoginPage from "./user-pages/LoginPage";
+
+// Auth
+import LoginPage from "./auth-pages/LoginPage";
+import SignUpPage from "./auth-pages/SignUpPage";
+
+// Normal User
 import HomePage from "./user-pages/HomePage";
 import PetDetailPage from "./user-pages/PetDetailPage";
 import AdoptionIntroPage from "./user-pages/AdoptionIntroPage";
@@ -33,8 +38,11 @@ function App() {
   return (
     <Routes>
 
-      // Normal User
+      // Auth
       <Route path="/" element={<LoginPage />} />
+      <Route path="/register" element={<SignUpPage />} />
+
+      // Normal User
       <Route path="/home" element={<HomePage />} />
       <Route path="/pet/:id" element={<PetDetailPage />} />
       <Route path="/adopt-intro/:id/:petName" element={<AdoptionIntroPage />} />
