@@ -22,166 +22,10 @@ import {
   Legend,
 } from "chart.js";
 import { Bar, Doughnut } from "react-chartjs-2";
+import ShelterSidebar from "../components/ShelterSidebar";
+import ShelterTopBar from "../components/ShelterTopBar";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
-
-// ─── Sidebar ────────────────────────────────────────────────────────────────
-function ShelterSidebar({ active }) {
-  const navigate = useNavigate();
-
-  const navItems = [
-    { label: "Dashboard", icon: "🏠", path: "/shelter/dashboard" },
-    { label: "Pet Listings", icon: "🐾", path: "/shelter/listings" },
-    { label: "Applications", icon: "📋", path: "/shelter/applications" },
-    { label: "Stray Reports", icon: "⚠️", path: "/shelter/stray-reports" },
-    { label: "Lost Pets", icon: "🔍", path: "/shelter/lost-pets" },
-    { label: "Messages", icon: "💬", path: "/shelter/messages" },
-  ];
-
-  return (
-    <aside
-      className="w-56 h-screen sticky top-0 flex flex-col justify-between py-6 px-4 shrink-0"
-      style={{ backgroundColor: "#FFFFFF", borderRight: "1px solid #EEE8E0" }}
-    >
-      <div>
-        {/* Logo */}
-        <div className="flex items-center gap-2 mb-2 px-2">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
-            style={{ backgroundColor: "#F59E0B" }}
-          >
-            🐾
-          </div>
-          <div>
-            <p className="font-black text-base leading-tight" style={{ color: "#3D2B1F" }}>
-              PawPal
-            </p>
-            <p className="text-xs" style={{ color: "#9B8778" }}>
-              Shelter Portal
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-1 mb-4 px-2">
-          <span
-            className="text-xs px-2 py-0.5 rounded-full font-medium"
-            style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}
-          >
-            Dashboard ▾
-          </span>
-        </div>
-
-        <nav className="flex flex-col gap-1">
-          {navItems.map((item) => {
-            const isActive = active === item.label;
-            return (
-              <button
-                key={item.label}
-                onClick={() => navigate(item.path)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full text-left transition-colors"
-                style={{
-                  backgroundColor: isActive ? "#FEF3C7" : "transparent",
-                  color: isActive ? "#92400E" : "#6B5C52",
-                }}
-              >
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* Bottom */}
-      <div className="flex flex-col gap-1">
-        <button
-          onClick={() => navigate("/shelter/profile")}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full text-left"
-          style={{ color: "#6B5C52" }}
-        >
-          <span>🏢</span>
-          <span>Shelter Profile</span>
-        </button>
-        <button
-          onClick={() => navigate("/shelter/settings")}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full text-left"
-          style={{ color: "#6B5C52" }}
-        >
-          <span>⚙️</span>
-          <span>Settings</span>
-        </button>
-
-        {/* Shelter badge */}
-        <div
-          className="mt-3 mx-1 p-3 rounded-xl flex items-center gap-2"
-          style={{ backgroundColor: "#FEF3C7" }}
-        >
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-lg shrink-0"
-            style={{ backgroundColor: "#F59E0B" }}
-          >
-            🏠
-          </div>
-          <div className="min-w-0">
-            <p
-              className="text-xs font-bold truncate"
-              style={{ color: "#3D2B1F" }}
-            >
-              Shelter Account
-            </p>
-            <div className="flex items-center gap-1">
-              <span style={{ color: "#22C55E", fontSize: 10 }}>✓</span>
-              <p className="text-xs" style={{ color: "#9B8778" }}>
-                Verified shelter
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-// ─── Top Bar ─────────────────────────────────────────────────────────────────
-function TopBar({ shelterName, userName }) {
-  const navigate = useNavigate();
-  return (
-    <div
-      className="sticky top-0 z-10 flex items-center justify-between px-8 py-3 bg-white"
-      style={{ borderBottom: "1px solid #EEE8E0" }}
-    >
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">🔍</span>
-        <input
-          className="pl-9 pr-4 py-2 rounded-xl text-sm w-80 outline-none"
-          style={{ backgroundColor: "#F9F5F0", color: "#3D2B1F" }}
-          placeholder="Search pets, applicants, reports..."
-        />
-      </div>
-      <div className="flex items-center gap-3">
-        <button className="relative w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: "#F9F5F0" }}>
-          🔔
-        </button>
-        <div className="flex items-center gap-2">
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm"
-            style={{ backgroundColor: "#F59E0B" }}
-          >
-            {(userName || "S").charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <p className="text-sm font-bold" style={{ color: "#3D2B1F" }}>
-              {userName || "Manager"}
-            </p>
-            <p className="text-xs" style={{ color: "#9B8778" }}>
-              Manager
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
@@ -469,11 +313,11 @@ export default function ShelterDashboardPage() {
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "#F9F5F0" }}>
-      <ShelterSidebar active="Dashboard" />
+      <ShelterSidebar orgName={shelterName} />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar shelterName={shelterName} userName={userName} />
+        <ShelterTopBar />
 
         <main className="flex-1 overflow-y-auto px-8 py-6">
 

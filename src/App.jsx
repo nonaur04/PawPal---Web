@@ -33,6 +33,7 @@ import SettingsPage from "./user-pages/SettingsPage";
 
 // Shelter
 import ShelterDashboardPage from "./shelter-pages/ShelterDashboardPage";
+import ShelterPostPetPage from "./shelter-pages/ShelterPostPetPage";
 
 function App() {
   return (
@@ -71,6 +72,8 @@ function App() {
 
       // Shelter
       <Route path="/shelter/dashboard" element={<ShelterDashboardPage />} />
+      <Route path="/shelter/post-pet" element={<ShelterPostPetPage />} />
+      
     </Routes>
   );
 }
