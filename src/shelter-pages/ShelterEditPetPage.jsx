@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useNavigate, useParams } from "react-router-dom";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { onAuthStateChanged } from "firebase/auth";
-import { db, auth, storage } from "../firebase/firebase";
-import LocationPickerModal from "../components/LocationPickerModal";
+import { db, storage } from "../firebase/firebase";
 import ShelterSidebar from "../components/ShelterSidebar";
 import ShelterTopBar from "../components/ShelterTopBar";
+import LocationPickerModal from "../components/LocationPickerModal";
 
 const SPECIES = [
   { label: "Cat", emoji: "🐱" },
@@ -29,12 +28,14 @@ const BREEDS = {
   Other: ["Other"],
 };
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
-export default function ShelterPostPetPage() {
+export default function ShelterEditPetPage() {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+
+  const [loading, setLoading] = useState(true);
   const [photos, setPhotos] = useState([null, null, null, null, null]);
   const [photoFiles, setPhotoFiles] = useState([null, null, null, null, null]);
+  const [existingPhotoUrls, setExistingPhotoUrls] = useState([]);
   const [species, setSpecies] = useState("Cat");
   const [name, setName] = useState("");
   const [breed, setBreed] = useState("");
@@ -52,9 +53,42 @@ export default function ShelterPostPetPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
-    return () => unsub();
-  }, []);
+    async function fetchPet() {
+      try {
+        const petDoc = await getDoc(doc(db, "pets", id));
+        if (!petDoc.exists()) return;
+        const data = petDoc.data();
+
+        const speciesLabel = data.species
+          ? data.species.charAt(0).toUpperCase() + data.species.slice(1)
+          : "Cat";
+
+        setSpecies(speciesLabel);
+        setName(data.name ?? "");
+        setBreed(data.breed ?? "");
+        setAgeYears(String(data.ageYears ?? 0));
+        setAgeMonths(String(data.ageMonths ?? 0));
+        setGender(data.gender ?? "");
+        setVaccinated(data.vaccinated ?? false);
+        setNeutered(data.neutered ?? false);
+        setPersonality(data.personality ?? []);
+        setDescription(data.description ?? "");
+        setAddress(data.address ?? "");
+        if (data.location) setLocationCoords(data.location);
+
+        if (data.photoUrls?.length) {
+          const filled = [...data.photoUrls, null, null, null, null, null].slice(0, 5);
+          setPhotos(filled);
+          setExistingPhotoUrls(data.photoUrls);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPet();
+  }, [id]);
 
   const handlePhotoChange = (index, file) => {
     if (!file) return;
@@ -73,7 +107,7 @@ export default function ShelterPostPetPage() {
     );
   };
 
-  const handleSubmit = async (status = "available") => {
+  const handleSave = async (status) => {
     if (!name.trim()) { setError("Please enter a pet name."); return; }
     if (!breed.trim()) { setError("Please select a breed."); return; }
     if (!gender) { setError("Please select a gender."); return; }
@@ -83,18 +117,23 @@ export default function ShelterPostPetPage() {
     setSubmitting(true);
 
     try {
-      const photoUrls = [];
+      const newUrls = [];
       for (const file of photoFiles) {
         if (!file) continue;
-        const storageRef = ref(storage, `pet_photos/${user.uid}/${Date.now()}_${file.name}`);
+        const storageRef = ref(storage, `pet_photos/${id}/${Date.now()}_${file.name}`);
         await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
-        photoUrls.push(url);
+        newUrls.push(url);
       }
 
-      await addDoc(collection(db, "pets"), {
+      const finalUrls = photoFiles
+        .map((file, i) => (file ? null : existingPhotoUrls[i] ?? null))
+        .filter(Boolean);
+      const allUrls = [...finalUrls, ...newUrls];
+
+      await updateDoc(doc(db, "pets", id), {
         name: name.trim(),
-        species,
+        species: species.toLowerCase(),
         breed: breed.trim(),
         ageYears: parseInt(ageYears) || 0,
         ageMonths: parseInt(ageMonths) || 0,
@@ -104,17 +143,12 @@ export default function ShelterPostPetPage() {
         personality,
         description: description.trim(),
         address: address.trim(),
-        location: locationCoords
-          ? { latitude: locationCoords.latitude, longitude: locationCoords.longitude }
-          : null,
-        photoUrls,
-        ownerId: user.uid,
-        postedBy: "shelter",
+        ...(locationCoords && { location: locationCoords }),
+        ...(allUrls.length && { photoUrls: allUrls }),
         status,
-        createdAt: serverTimestamp(),
       });
 
-      navigate("/shelter/listings");
+      navigate(`/shelter/listings/${id}`);
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Please try again.");
@@ -122,6 +156,17 @@ export default function ShelterPostPetPage() {
       setSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center" style={{ backgroundColor: "#F5F2EE" }}>
+        <div className="text-center">
+          <div className="text-4xl mb-3">🐾</div>
+          <p className="text-sm" style={{ color: "#9B8778" }}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "#F5F2EE", fontFamily: "'Nunito', sans-serif" }}>
@@ -136,18 +181,18 @@ export default function ShelterPostPetPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <button
-                onClick={() => navigate("/shelter/listings")}
+                onClick={() => navigate(`/shelter/listings/${id}`)}
                 className="flex items-center gap-1 text-sm font-semibold mb-1"
                 style={{ color: "#6B5E52" }}
               >
-                ‹ Back to listings
+                ‹ Back
               </button>
-              <h1 className="text-2xl font-black" style={{ color: "#3D2B1F" }}>Add a new pet</h1>
-              <p className="text-xs mt-0.5" style={{ color: "#9B8778" }}>Listing will be visible to adopters once published.</p>
+              <h1 className="text-2xl font-black" style={{ color: "#3D2B1F" }}>Edit listing</h1>
+              <p className="text-xs mt-0.5" style={{ color: "#9B8778" }}>Changes will be visible to adopters once saved.</p>
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => handleSubmit("draft")}
+                onClick={() => handleSave("draft")}
                 disabled={submitting}
                 className="px-5 py-2.5 rounded-xl text-sm font-bold transition"
                 style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}
@@ -155,12 +200,12 @@ export default function ShelterPostPetPage() {
                 Save draft
               </button>
               <button
-                onClick={() => handleSubmit("available")}
+                onClick={() => handleSave("available")}
                 disabled={submitting}
                 className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition"
                 style={{ backgroundColor: submitting ? "#F8C97A" : "#F5A623" }}
               >
-                {submitting ? "Publishing..." : "Publish"}
+                {submitting ? "Saving..." : "Save changes"}
               </button>
             </div>
           </div>
@@ -211,7 +256,6 @@ export default function ShelterPostPetPage() {
               <div className="rounded-2xl p-5" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                 <p className="font-black mb-4" style={{ color: "#3D2B1F" }}>Basic info</p>
 
-                {/* Species */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold mb-2" style={{ color: "#6B5E52" }}>Species</label>
                   <div className="flex gap-2 flex-wrap">
@@ -229,7 +273,6 @@ export default function ShelterPostPetPage() {
                   </div>
                 </div>
 
-                {/* Name */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Name</label>
                   <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Comel"
@@ -237,57 +280,53 @@ export default function ShelterPostPetPage() {
                     style={{ border: "1.5px solid #EEE8E0", backgroundColor: "#FAFAFA", fontFamily: "'Nunito', sans-serif" }} />
                 </div>
 
-                {/* Breed + Age row */}
-                <div className="flex gap-3 mb-4">
-                  <div className="flex-1">
-                    <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Breed</label>
-                    <select value={breed} onChange={(e) => setBreed(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                      style={{ border: "1.5px solid #EEE8E0", backgroundColor: "#FAFAFA", fontFamily: "'Nunito', sans-serif", color: breed ? "#3D2B1F" : "#9B8778" }}>
-                      <option value="">e.g. Local Shorthair</option>
-                      {(BREEDS[species] || BREEDS.Other).map((b) => (
-                        <option key={b} value={b}>{b}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Age</label>
-                    <div className="flex gap-2">
-                      <div className="flex-1 relative">
-                        <input type="number" min="0" max="30" value={ageYears} onChange={(e) => setAgeYears(e.target.value)}
-                          className="w-full px-3 py-3 rounded-xl text-sm outline-none pr-12"
-                          style={{ border: "1.5px solid #EEE8E0", backgroundColor: "#FAFAFA" }} />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: "#9B8778" }}>yr</span>
-                      </div>
-                      <div className="flex-1 relative">
-                        <input type="number" min="0" max="11" value={ageMonths} onChange={(e) => setAgeMonths(e.target.value)}
-                          className="w-full px-3 py-3 rounded-xl text-sm outline-none pr-12"
-                          style={{ border: "1.5px solid #EEE8E0", backgroundColor: "#FAFAFA" }} />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: "#9B8778" }}>mo</span>
-                      </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Breed</label>
+                  <select value={breed} onChange={(e) => setBreed(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                    style={{ border: "1.5px solid #EEE8E0", backgroundColor: "#FAFAFA", fontFamily: "'Nunito', sans-serif", color: breed ? "#3D2B1F" : "#9B8778" }}>
+                    <option value="">Select breed</option>
+                    {(BREEDS[species] || BREEDS.Other).map((b) => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Age</label>
+                  <div className="flex gap-3">
+                    <div className="flex-1 relative">
+                      <input type="number" min="0" max="30" value={ageYears} onChange={(e) => setAgeYears(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl text-sm outline-none pr-14"
+                        style={{ border: "1.5px solid #EEE8E0", backgroundColor: "#FAFAFA" }} />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold" style={{ color: "#9B8778" }}>years</span>
+                    </div>
+                    <div className="flex-1 relative">
+                      <input type="number" min="0" max="11" value={ageMonths} onChange={(e) => setAgeMonths(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl text-sm outline-none pr-16"
+                        style={{ border: "1.5px solid #EEE8E0", backgroundColor: "#FAFAFA" }} />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold" style={{ color: "#9B8778" }}>months</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Gender */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold mb-2" style={{ color: "#6B5E52" }}>Gender</label>
                   <div className="flex gap-3">
-                    {["Male", "Female"].map((g) => (
+                    {["male", "female"].map((g) => (
                       <button key={g} onClick={() => setGender(g)}
-                        className="flex-1 py-3 rounded-xl text-sm font-semibold transition"
+                        className="flex-1 py-3 rounded-xl text-sm font-semibold capitalize transition"
                         style={{
                           backgroundColor: gender === g ? "#FFF3E0" : "#F5F2EE",
                           border: gender === g ? "1.5px solid #F5A623" : "1.5px solid transparent",
                           color: gender === g ? "#F5A623" : "#6B5E52",
                         }}>
-                        {g === "Male" ? "♂ Male" : "♀ Female"}
+                        {g === "male" ? "♂ Male" : "♀ Female"}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Location */}
                 <div>
                   <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Location</label>
                   <button type="button" onClick={() => setShowMapModal(true)}
@@ -309,33 +348,33 @@ export default function ShelterPostPetPage() {
             {/* Right column */}
             <div className="w-80 space-y-5">
 
-              {/* Health */}
               <div className="rounded-2xl p-5" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                 <p className="font-black mb-4" style={{ color: "#3D2B1F" }}>Health</p>
                 <div className="flex gap-3">
-                  <button onClick={() => setVaccinated(!vaccinated)} className="flex-1 py-3 rounded-xl text-sm font-bold transition"
+                  <button onClick={() => setVaccinated(!vaccinated)}
+                    className="flex-1 py-3 rounded-xl text-sm font-bold transition"
                     style={{
                       backgroundColor: vaccinated ? "#DCFCE7" : "#F5F2EE",
                       color: vaccinated ? "#16A34A" : "#9B8778",
                       border: vaccinated ? "1.5px solid #86EFAC" : "1.5px solid transparent",
                     }}>
-                    {vaccinated ? "✅" : "❌"} Vaccinated
+                    {vaccinated ? "✓" : "×"} Vaccinated
                   </button>
-                  <button onClick={() => setNeutered(!neutered)} className="flex-1 py-3 rounded-xl text-sm font-bold transition"
+                  <button onClick={() => setNeutered(!neutered)}
+                    className="flex-1 py-3 rounded-xl text-sm font-bold transition"
                     style={{
                       backgroundColor: neutered ? "#DCFCE7" : "#F5F2EE",
                       color: neutered ? "#16A34A" : "#9B8778",
                       border: neutered ? "1.5px solid #86EFAC" : "1.5px solid transparent",
                     }}>
-                    {neutered ? "✅" : "❌"} Neutered
+                    {neutered ? "✓" : "×"} Neutered
                   </button>
                 </div>
               </div>
 
-              {/* Personality */}
               <div className="rounded-2xl p-5" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                 <p className="font-black mb-1" style={{ color: "#3D2B1F" }}>Personality</p>
-                <p className="text-xs mb-3" style={{ color: "#9B8778" }}>Used by AI to generate screening questions for applicants.</p>
+                <p className="text-xs mb-3" style={{ color: "#9B8778" }}>Used by AI to generate screening questions.</p>
                 <div className="flex flex-wrap gap-2">
                   {PERSONALITIES.map((trait) => (
                     <button key={trait} onClick={() => togglePersonality(trait)}
@@ -351,11 +390,10 @@ export default function ShelterPostPetPage() {
                 </div>
               </div>
 
-              {/* About */}
               <div className="rounded-2xl p-5" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                 <p className="font-black mb-3" style={{ color: "#3D2B1F" }}>About this pet</p>
                 <textarea rows={5} value={description} onChange={(e) => setDescription(e.target.value)}
-                  placeholder="e.g. Tako is a sweet kitten rescued from Bandar Hilir. Litter-trained and loves chasing toy mice. Best suited to a calm indoor home."
+                  placeholder="Describe this pet..."
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none"
                   style={{ border: "1.5px solid #EEE8E0", backgroundColor: "#FAFAFA", fontFamily: "'Nunito', sans-serif", color: "#3D2B1F" }} />
               </div>
