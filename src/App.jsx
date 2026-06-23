@@ -37,6 +37,8 @@ import ShelterPostPetPage from "./shelter-pages/ShelterPostPetPage";
 import ShelterListingsPage from "./shelter-pages/ShelterListingsPage";
 import ShelterPetDetailPage from "./shelter-pages/ShelterPetDetailPage";
 import ShelterEditPetPage from "./shelter-pages/ShelterEditPetPage";
+import ShelterApplicationsPage from "./shelter-pages/ShelterApplicationsPage";
+import ShelterApplicationDetailPage from "./shelter-pages/ShelterApplicationDetailPage";
 
 function App() {
   return (
@@ -79,6 +81,8 @@ function App() {
       <Route path="/shelter/listings" element={<ShelterListingsPage />} />
       <Route path="/shelter/listings/:id" element={<ShelterPetDetailPage />} />
       <Route path="/shelter/edit-pet/:id" element={<ShelterEditPetPage />} />
+      <Route path="/shelter/applications" element={<ShelterApplicationsPage />} />
+      <Route path="/shelter/applications/:id" element={<ShelterApplicationDetailPage />} />
     </Routes>
   );
 }
