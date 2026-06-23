@@ -39,6 +39,8 @@ import ShelterPetDetailPage from "./shelter-pages/ShelterPetDetailPage";
 import ShelterEditPetPage from "./shelter-pages/ShelterEditPetPage";
 import ShelterApplicationsPage from "./shelter-pages/ShelterApplicationsPage";
 import ShelterApplicationDetailPage from "./shelter-pages/ShelterApplicationDetailPage";
+import ShelterStrayReportsPage from "./shelter-pages/ShelterStrayReportsPage";
+import ShelterStrayReportDetailPage from "./shelter-pages/ShelterStrayReportDetailPage";
 
 function App() {
   return (
@@ -83,6 +85,8 @@ function App() {
       <Route path="/shelter/edit-pet/:id" element={<ShelterEditPetPage />} />
       <Route path="/shelter/applications" element={<ShelterApplicationsPage />} />
       <Route path="/shelter/applications/:id" element={<ShelterApplicationDetailPage />} />
+      <Route path="/shelter/stray-reports" element={<ShelterStrayReportsPage />} />
+      <Route path="/shelter/stray-reports/:id" element={<ShelterStrayReportDetailPage />} />
     </Routes>
   );
 }
