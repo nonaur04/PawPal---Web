@@ -119,6 +119,7 @@ export default function MessagesPage() {
   const [pawpalContext, setPawpalContext] = useState(null);
 
   const [chats, setChats] = useState([]);
+  const [chatUserNames, setChatUserNames] = useState({});
   const [activeChatData, setActiveChatData] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
@@ -143,12 +144,32 @@ export default function MessagesPage() {
   // Load all chats for current user
   useEffect(() => {
     if (!currentUser) return;
-    const unsub = onSnapshot(collection(db, "chats"), (snap) => {
+    const unsub = onSnapshot(collection(db, "chats"), async (snap) => {
       const userChats = snap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
         .filter((c) => c.participants?.includes(currentUser.uid))
         .sort((a, b) => (b.lastMessageAt?.toDate?.() ?? 0) - (a.lastMessageAt?.toDate?.() ?? 0));
       setChats(userChats);
+
+      // Fetch display names for all other participants
+      const otherUids = [...new Set(
+        userChats.map((c) => c.participants?.find((p) => p !== currentUser.uid)).filter(Boolean)
+      )];
+      const names = {};
+      await Promise.all(otherUids.map(async (uid) => {
+        try {
+          const ud = await getDoc(doc(db, "users", uid));
+          if (ud.exists()) {
+            const d = ud.data();
+            names[uid] = d.orgName || d.shelterName || d.name || d.fullName || d.displayName || "User";
+          } else {
+            names[uid] = "User";
+          }
+        } catch {
+          names[uid] = "User";
+        }
+      }));
+      setChatUserNames((prev) => ({ ...prev, ...names }));
     });
     return () => unsub();
   }, [currentUser]);
@@ -261,11 +282,8 @@ export default function MessagesPage() {
   };
 
   const getOtherUserName = (chat) => {
-    if (activeChatData?.id === chat.id && activeChatData?.otherUser) {
-      const u = activeChatData.otherUser;
-      return u.name || u.displayName || u.shelterName || "User";
-    }
-    return chat.otherName || "User";
+    const otherUid = chat.participants?.find((p) => p !== currentUser?.uid);
+    return chatUserNames[otherUid] || "User";
   };
 
   return (
@@ -416,11 +434,11 @@ export default function MessagesPage() {
             {/* Header */}
             <div className="flex items-center gap-3 px-6 py-4 bg-white" style={{ borderBottom: "1px solid #EEE8E0" }}>
               <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-black" style={{ backgroundColor: "#F5EFE6", color: "#F5A623" }}>
-                {(activeChatData.otherUser?.name || activeChatData.otherUser?.displayName || "U").charAt(0).toUpperCase()}
+                {(activeChatData.otherUser?.orgName || activeChatData.otherUser?.shelterName || activeChatData.otherUser?.name || activeChatData.otherUser?.fullName || activeChatData.otherUser?.displayName || "U").charAt(0).toUpperCase()}
               </div>
               <div>
                 <p className="font-black text-sm" style={{ color: "#3D2B1F" }}>
-                  {activeChatData.otherUser?.name || activeChatData.otherUser?.displayName || activeChatData.otherUser?.shelterName || "User"}
+                  {activeChatData.otherUser?.orgName || activeChatData.otherUser?.shelterName || activeChatData.otherUser?.name || activeChatData.otherUser?.fullName || activeChatData.otherUser?.displayName || "User"}
                 </p>
                 {activeChatData.petName && (
                   <p className="text-xs" style={{ color: "#9B8778" }}>About: {activeChatData.petName}</p>
