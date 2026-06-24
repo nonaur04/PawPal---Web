@@ -6,8 +6,8 @@ const NAV = [
   { icon: "🏠", label: "Discover", path: "/home" },
   { icon: "📋", label: "Applications", path: "/applications" },
   { icon: "⚠️", label: "Reports", path: "/reports" },
-  { icon: "💬", label: "Messages", path: "/messages" },
   { icon: "🏥", label: "Vet Near Me", path: "/vet-near-me" },
+  { icon: "💬", label: "Messages", path: "/messages" },
 ];
 
 export default function Sidebar({ userName }) {

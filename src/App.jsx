@@ -43,6 +43,7 @@ import ShelterStrayReportsPage from "./shelter-pages/ShelterStrayReportsPage";
 import ShelterStrayReportDetailPage from "./shelter-pages/ShelterStrayReportDetailPage";
 import ShelterLostPetsPage from "./shelter-pages/ShelterLostPetsPage";
 import ShelterLostReportDetailPage from "./shelter-pages/ShelterLostReportDetailPage";
+import ShelterVetNearMePage from "./shelter-pages/ShelterVetNearMePage";
 
 function App() {
   return (
@@ -91,6 +92,7 @@ function App() {
       <Route path="/shelter/stray-reports/:id" element={<ShelterStrayReportDetailPage />} />
       <Route path="/shelter/lost-pets" element={<ShelterLostPetsPage />} />
       <Route path="/shelter/lost-pets/:id" element={<ShelterLostReportDetailPage />} />
+      <Route path="/shelter/vet-near-me" element={<ShelterVetNearMePage />} />
     </Routes>
   );
 }

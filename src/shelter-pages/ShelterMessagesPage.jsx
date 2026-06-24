@@ -1,0 +1,470 @@
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "../firebase/firebase";
+import {
+  collection, getDocs, doc, getDoc, setDoc, addDoc,
+  onSnapshot, query, orderBy, serverTimestamp, updateDoc
+} from "firebase/firestore";
+import ShelterSidebar from "../components/ShelterSidebar";
+import ShelterTopBar from "../components/ShelterTopBar";
+
+const GROQ_API_KEY = "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";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+const QUICK_PROMPTS = ["Tips for screening applicants?", "How do I post a pet?", "How does the AI score work?"];
+
+const AI_INITIAL_MESSAGES = [
+  { role: "assistant", content: "Hi! I'm PawPal Assistant ✨ How can I help you today?" },
+  { role: "assistant", content: "I can help with managing your listings, reviewing applicants, or answering anything about PawPal!" },
+];
+
+const ROUTE_KEYWORDS = [
+  { keywords: ["post a pet", "add a pet", "new listing"], label: "Post a Pet", path: "/shelter/post-pet" },
+  { keywords: ["pet listings", "your pets", "manage pets"], label: "Pet Listings", path: "/shelter/listings" },
+  { keywords: ["applications", "applicants", "review applicant", "ai score"], label: "Applications", path: "/shelter/applications" },
+  { keywords: ["stray report", "stray reports inbox"], label: "Stray Reports", path: "/shelter/stray-reports" },
+  { keywords: ["lost pet", "lost reports"], label: "Lost Pets", path: "/shelter/lost-pets" },
+  { keywords: ["dashboard", "analytics", "overview"], label: "Dashboard", path: "/shelter/dashboard" },
+];
+
+function detectNavButtons(text) {
+  const lower = text.toLowerCase();
+  const found = [];
+  for (const route of ROUTE_KEYWORDS) {
+    if (route.keywords.some((kw) => lower.includes(kw))) {
+      if (!found.find((f) => f.path === route.path)) found.push(route);
+    }
+  }
+  return found.slice(0, 2);
+}
+
+async function fetchPawPalContext(userId) {
+  let petsData = [], userProfile = null;
+  try {
+    const snap = await getDocs(collection(db, "pets"));
+    petsData = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((p) => p.ownerId === userId);
+  } catch {}
+  try {
+    if (userId) {
+      const ud = await getDoc(doc(db, "users", userId));
+      if (ud.exists()) userProfile = ud.data();
+    }
+  } catch {}
+  return { petsData, userProfile };
+}
+
+function buildSystemPrompt(petsData, userProfile) {
+  const petsContext = petsData.length > 0
+    ? `\n\nYour shelter's pets:\n` + petsData.map((p) =>
+        `- ID:${p.id} | ${p.name} | ${p.species} | ${p.breed} | status: ${p.status}`
+      ).join("\n") : "";
+  const userCtx = userProfile
+    ? `\n\nShelter: name=${userProfile.orgName || userProfile.fullName || "Shelter"}, role=shelter` : "";
+
+  return `You are PawPal Assistant — friendly AI for PawPal, a Malaysian pet adoption platform in Melaka. You are talking to a SHELTER MANAGER, not a pet adopter.
+
+When directing the shelter to features, use these exact phrases:
+- "post a pet" for adding a new listing
+- "pet listings" for managing posted pets
+- "applications" for reviewing adopters and AI scores
+- "stray reports" for the stray reports inbox
+- "lost pets" for community lost pet reports
+- "dashboard" for analytics overview
+
+PawPal flow: Shelter posts a pet → Adopter applies → AI screening generates a suitability score → Shelter reviews in Applications → Approve/Decline → Chat opens with approved adopter.
+${userCtx}${petsContext}
+
+Be concise, warm, and helpful. Focus on shelter management topics: posting pets, reviewing applicants, handling stray/lost reports, and using the dashboard.`;
+}
+
+function formatTime(ts) {
+  if (!ts) return "";
+  const date = ts.toDate ? ts.toDate() : new Date(ts);
+  const now = new Date();
+  const diff = Math.floor((now - date) / 1000);
+  if (diff < 60) return "now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return date.toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit" });
+  if (diff < 604800) return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][date.getDay()];
+  return date.toLocaleDateString("en-MY", { day: "numeric", month: "short" });
+}
+
+function getChatId(uid1, uid2) {
+  return [uid1, uid2].sort().join("_");
+}
+
+export default function ShelterMessagesPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const withUid = searchParams.get("with");
+  const withPetName = searchParams.get("pet");
+
+  const [currentUser, setCurrentUser] = useState(null);
+  const [activeChat, setActiveChat] = useState("ai");
+  const [aiMessages, setAiMessages] = useState(AI_INITIAL_MESSAGES);
+  const [aiInput, setAiInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [pawpalContext, setPawpalContext] = useState(null);
+
+  const [chats, setChats] = useState([]);
+  const [activeChatData, setActiveChatData] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const [sendingMsg, setSendingMsg] = useState(false);
+
+  const bottomRef = useRef(null);
+  const chatBottomRef = useRef(null);
+
+  // Auth
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      setCurrentUser(u);
+      if (u) {
+        const ctx = await fetchPawPalContext(u.uid);
+        setPawpalContext(ctx);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // Load all chats for current user
+  useEffect(() => {
+    if (!currentUser) return;
+    const unsub = onSnapshot(collection(db, "chats"), (snap) => {
+      const userChats = snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter((c) => c.participants?.includes(currentUser.uid))
+        .sort((a, b) => (b.lastMessageAt?.toDate?.() ?? 0) - (a.lastMessageAt?.toDate?.() ?? 0));
+      setChats(userChats);
+    });
+    return () => unsub();
+  }, [currentUser]);
+
+  // Open chat if URL has ?with=uid
+  useEffect(() => {
+    if (!currentUser || !withUid) return;
+    openOrCreateChat(withUid, withPetName);
+  }, [currentUser, withUid]);
+
+  // Load messages for active chat
+  useEffect(() => {
+    if (!activeChatData) return;
+    const msgsRef = query(
+      collection(db, "chats", activeChatData.id, "messages"),
+      orderBy("createdAt", "asc")
+    );
+    const unsub = onSnapshot(msgsRef, (snap) => {
+      setChatMessages(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsub();
+  }, [activeChatData]);
+
+  useEffect(() => { chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMessages]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [aiMessages]);
+
+  const openOrCreateChat = async (otherUid, petName = null) => {
+    const chatId = getChatId(currentUser.uid, otherUid);
+    const chatRef = doc(db, "chats", chatId);
+    const chatSnap = await getDoc(chatRef);
+
+    if (!chatSnap.exists()) {
+      await setDoc(chatRef, {
+        participants: [currentUser.uid, otherUid],
+        lastMessage: "",
+        lastMessageAt: serverTimestamp(),
+        petName: petName || null,
+        createdAt: serverTimestamp(),
+      });
+    }
+
+    let otherUser = null;
+    try {
+      const ud = await getDoc(doc(db, "users", otherUid));
+      if (ud.exists()) otherUser = { id: otherUid, ...ud.data() };
+    } catch {}
+
+    setActiveChatData({
+      id: chatId,
+      otherUser,
+      petName: petName || chatSnap.data()?.petName,
+    });
+    setActiveChat("user_" + chatId);
+  };
+
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || !activeChatData || sendingMsg) return;
+    setSendingMsg(true);
+    const text = chatInput.trim();
+    setChatInput("");
+    try {
+      await addDoc(collection(db, "chats", activeChatData.id, "messages"), {
+        senderId: currentUser.uid,
+        text,
+        createdAt: serverTimestamp(),
+      });
+      await updateDoc(doc(db, "chats", activeChatData.id), {
+        lastMessage: text,
+        lastMessageAt: serverTimestamp(),
+      });
+    } catch (err) { console.error(err); }
+    finally { setSendingMsg(false); }
+  };
+
+  // AI chat
+  function parseAiResponse(text) {
+    const petMatches = [];
+    const regex = /VIEW_PET_ID:([a-zA-Z0-9]+)/g;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      const pet = pawpalContext?.petsData?.find((p) => p.id === match[1]);
+      if (pet) petMatches.push({ id: match[1], name: pet.name });
+    }
+    return { cleanText: text.replace(/VIEW_PET_ID:[a-zA-Z0-9]+/g, "").trim(), petMatches };
+  }
+
+  const sendAiMessage = async (text) => {
+    if (!text.trim() || aiLoading) return;
+    const userMsg = { role: "user", content: text.trim() };
+    setAiMessages((prev) => [...prev, userMsg]);
+    setAiInput("");
+    setAiLoading(true);
+    try {
+      const ctx = pawpalContext || await fetchPawPalContext(currentUser?.uid);
+      const systemPrompt = buildSystemPrompt(ctx.petsData, ctx.userProfile);
+      const history = [...aiMessages, userMsg].map((m) => ({ role: m.role, content: m.content }));
+      const res = await fetch(GROQ_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GROQ_API_KEY}` },
+        body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "system", content: systemPrompt }, ...history], temperature: 0.7 }),
+      });
+      const data = await res.json();
+      const raw = data.choices?.[0]?.message?.content ?? "Sorry, something went wrong.";
+      const { cleanText, petMatches } = parseAiResponse(raw);
+      setAiMessages((prev) => [...prev, { role: "assistant", content: cleanText, petMatches }]);
+    } catch {
+      setAiMessages((prev) => [...prev, { role: "assistant", content: "Sorry, something went wrong.", petMatches: [] }]);
+    } finally { setAiLoading(false); }
+  };
+
+  const getOtherUserName = (chat) => {
+    if (activeChatData?.id === chat.id && activeChatData?.otherUser) {
+      const u = activeChatData.otherUser;
+      return u.fullName || u.name || u.orgName || "User";
+    }
+    return chat.otherName || "User";
+  };
+
+  return (
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "#F5F2EE", fontFamily: "'Nunito', sans-serif" }}>
+      <ShelterSidebar />
+      <div className="flex-1 flex min-w-0 overflow-hidden">
+
+        {/* Contacts list */}
+        <div className="flex flex-col shrink-0 overflow-hidden" style={{ width: 300, backgroundColor: "white", borderRight: "1px solid #EEE8E0" }}>
+          <div className="px-5 py-4" style={{ borderBottom: "1px solid #EEE8E0" }}>
+            <h2 className="text-xl font-black" style={{ color: "#3D2B1F" }}>Messages</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {/* AI Assistant */}
+            <button onClick={() => setActiveChat("ai")} className="w-full flex items-center gap-3 px-4 py-4 text-left transition"
+              style={{ backgroundColor: activeChat === "ai" ? "#FFF3E0" : "transparent", borderBottom: "1px solid #F5F2EE" }}>
+              <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-xl" style={{ backgroundColor: "#F5A623" }}>✨</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-0.5">
+                  <div className="flex items-center gap-2">
+                    <p className="font-black text-sm" style={{ color: "#3D2B1F" }}>PawPal Assistant</p>
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#F5A623", color: "white" }}>AI</span>
+                  </div>
+                  <p className="text-xs" style={{ color: "#9B8778" }}>now</p>
+                </div>
+                <p className="text-xs truncate" style={{ color: "#9B8778" }}>Ask me anything about PawPal...</p>
+              </div>
+            </button>
+
+            {/* Real chats */}
+            {chats.map((chat) => {
+              const isActive = activeChat === "user_" + chat.id;
+              const otherName = getOtherUserName(chat);
+              return (
+                <button key={chat.id} onClick={() => {
+                  const otherUid = chat.participants?.find((p) => p !== currentUser?.uid);
+                  if (otherUid) openOrCreateChat(otherUid, chat.petName);
+                }} className="w-full flex items-center gap-3 px-4 py-4 text-left transition"
+                  style={{ backgroundColor: isActive ? "#FFF3E0" : "transparent", borderBottom: "1px solid #F5F2EE" }}>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-xl font-black" style={{ backgroundColor: "#F5EFE6", color: "#F5A623" }}>
+                    {otherName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <p className="font-black text-sm" style={{ color: "#3D2B1F" }}>{otherName}</p>
+                      <p className="text-xs shrink-0" style={{ color: "#9B8778" }}>{formatTime(chat.lastMessageAt)}</p>
+                    </div>
+                    {chat.petName && <p className="text-xs font-semibold mb-0.5" style={{ color: "#F5A623" }}>re: {chat.petName}</p>}
+                    <p className="text-xs truncate" style={{ color: "#9B8778" }}>{chat.lastMessage || "No messages yet"}</p>
+                  </div>
+                </button>
+              );
+            })}
+
+            {chats.length === 0 && (
+              <div className="px-4 py-8 text-center">
+                <p className="text-sm" style={{ color: "#9B8778" }}>No chats yet. Chat opens once you approve an applicant.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* AI Chat */}
+        {activeChat === "ai" && (
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <div className="flex items-center gap-3 px-6 py-4 bg-white" style={{ borderBottom: "1px solid #EEE8E0" }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ backgroundColor: "#F5A623" }}>✨</div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="font-black text-sm" style={{ color: "#3D2B1F" }}>PawPal Assistant</p>
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#F5A623", color: "white" }}>AI</span>
+                </div>
+                <p className="text-xs" style={{ color: "#16A34A" }}>Always online</p>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+              {aiMessages.map((msg, i) => {
+                const navBtns = msg.role === "assistant" ? detectNavButtons(msg.content) : [];
+                const petMatches = msg.petMatches ?? [];
+                return (
+                  <div key={i} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
+                    <div className="max-w-lg px-4 py-3 rounded-2xl text-sm leading-relaxed"
+                      style={{ backgroundColor: msg.role === "user" ? "#F5A623" : "white", color: msg.role === "user" ? "white" : "#3D2B1F", border: msg.role === "assistant" ? "1px solid #EEE8E0" : "none", borderRadius: msg.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px" }}>
+                      {msg.content}
+                    </div>
+                    {petMatches.length > 0 && (
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        {petMatches.map((pet) => (
+                          <button key={pet.id} onClick={() => navigate(`/shelter/listings/${pet.id}`)}
+                            className="text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1"
+                            style={{ backgroundColor: "#F5A623", color: "white" }}>
+                            🐾 View {pet.name}'s profile
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {navBtns.length > 0 && petMatches.length === 0 && (
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        {navBtns.map((btn) => (
+                          <button key={btn.label} onClick={() => navigate(btn.path)}
+                            className="text-xs font-bold px-3 py-1.5 rounded-full"
+                            style={{ backgroundColor: "white", border: "1.5px solid #F5A623", color: "#F5A623" }}>
+                            → {btn.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {aiLoading && (
+                <div className="flex justify-start">
+                  <div className="px-4 py-3 rounded-2xl text-sm" style={{ backgroundColor: "white", border: "1px solid #EEE8E0", borderRadius: "18px 18px 18px 4px" }}>
+                    <span style={{ color: "#9B8778" }}>✨ Thinking...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={bottomRef} />
+            </div>
+            <div className="px-6 pb-3 flex gap-2 flex-wrap">
+              {QUICK_PROMPTS.map((p) => (
+                <button key={p} onClick={() => sendAiMessage(p)}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-full"
+                  style={{ backgroundColor: "white", border: "1.5px solid #F5A623", color: "#F5A623" }}>
+                  {p}
+                </button>
+              ))}
+            </div>
+            <div className="px-6 pb-6">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white" style={{ border: "1.5px solid #EEE8E0" }}>
+                <input value={aiInput} onChange={(e) => setAiInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendAiMessage(aiInput); } }}
+                  placeholder="Ask me anything about PawPal..."
+                  className="flex-1 text-sm outline-none bg-transparent" style={{ fontFamily: "'Nunito', sans-serif", color: "#3D2B1F" }} />
+                <button onClick={() => sendAiMessage(aiInput)} disabled={!aiInput.trim() || aiLoading}
+                  className="px-4 py-2 rounded-xl text-sm font-bold text-white shrink-0"
+                  style={{ backgroundColor: aiInput.trim() && !aiLoading ? "#F5A623" : "#F8C97A" }}>
+                  ➤ Send
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* User-to-user chat */}
+        {activeChat.startsWith("user_") && activeChatData && (
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center gap-3 px-6 py-4 bg-white" style={{ borderBottom: "1px solid #EEE8E0" }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-black" style={{ backgroundColor: "#F5EFE6", color: "#F5A623" }}>
+                {(activeChatData.otherUser?.fullName || activeChatData.otherUser?.name || "U").charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="font-black text-sm" style={{ color: "#3D2B1F" }}>
+                  {activeChatData.otherUser?.fullName || activeChatData.otherUser?.name || activeChatData.otherUser?.orgName || "User"}
+                </p>
+                {activeChatData.petName && (
+                  <p className="text-xs" style={{ color: "#9B8778" }}>About: {activeChatData.petName}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+              {chatMessages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <p className="text-3xl mb-2">💬</p>
+                  <p className="text-sm font-semibold" style={{ color: "#9B8778" }}>Start the conversation!</p>
+                  {activeChatData.petName && (
+                    <p className="text-xs mt-1" style={{ color: "#B0A090" }}>about {activeChatData.petName}</p>
+                  )}
+                </div>
+              )}
+              {chatMessages.map((msg) => {
+                const isMe = msg.senderId === currentUser?.uid;
+                return (
+                  <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                    <div className="max-w-lg px-4 py-3 rounded-2xl text-sm leading-relaxed"
+                      style={{ backgroundColor: isMe ? "#F5A623" : "white", color: isMe ? "white" : "#3D2B1F", border: !isMe ? "1px solid #EEE8E0" : "none", borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px" }}>
+                      {msg.text}
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={chatBottomRef} />
+            </div>
+
+            {/* Input */}
+            <div className="px-6 pb-6">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white" style={{ border: "1.5px solid #EEE8E0" }}>
+                <input value={chatInput} onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
+                  placeholder="Type a message..."
+                  className="flex-1 text-sm outline-none bg-transparent" style={{ fontFamily: "'Nunito', sans-serif", color: "#3D2B1F" }} />
+                <button onClick={sendChatMessage} disabled={!chatInput.trim() || sendingMsg}
+                  className="px-4 py-2 rounded-xl text-sm font-bold text-white shrink-0"
+                  style={{ backgroundColor: chatInput.trim() && !sendingMsg ? "#F5A623" : "#F8C97A" }}>
+                  ➤ Send
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* No chat selected */}
+        {!activeChat.startsWith("user_") && activeChat !== "ai" && (
+          <div className="flex-1 flex flex-col items-center justify-center" style={{ backgroundColor: "#F5F2EE" }}>
+            <p className="text-4xl mb-3">💬</p>
+            <p className="font-black text-lg mb-1" style={{ color: "#3D2B1F" }}>Select a conversation</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

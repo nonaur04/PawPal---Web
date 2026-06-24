@@ -1,9 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase/firebase";
-import Sidebar from "../components/Sidebar";
-import TopBar from "../components/TopBar";
+import ShelterSidebar from "../components/ShelterSidebar";
+import ShelterTopBar from "../components/ShelterTopBar";
 
 const MAPS_API_KEY = "AIzaSyADab1Ky8Qf_-hn7jjAmlqV714YD9P5Bz8";
 
@@ -96,6 +95,7 @@ function getDrivingDistances(origin, places) {
                   durationText: el.duration.text,
                 };
               } else {
+                // Fallback to straight-line if no driving route found
                 const p = places[globalIndex];
                 results[globalIndex] = {
                   distKm: haversineKm(origin.lat, origin.lng, p.geometry.location.lat(), p.geometry.location.lng()),
@@ -104,6 +104,7 @@ function getDrivingDistances(origin, places) {
               }
             });
           } else {
+            // Whole batch failed — fallback to straight-line for this batch
             batch.forEach((p, i) => {
               const globalIndex = batchIndex * batchSize + i;
               results[globalIndex] = {
@@ -149,11 +150,11 @@ function isOpenNow(place) {
   return isOpen === true;
 }
 
-export default function VetNearMePage() {
+export default function ShelterVetNearMePage() {
   const navigate = useNavigate();
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
-  const [userName, setUserName] = useState("");
+  const user = auth.currentUser;
   const [userLocation, setUserLocation] = useState(null);
   const [vets, setVets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -164,11 +165,7 @@ export default function VetNearMePage() {
   const markersRef = useRef([]);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => setUserName(u?.displayName || ""));
-    return () => unsub();
-  }, []);
-
-  useEffect(() => {
+    if (!user) { navigate("/"); return; }
     loadMapsScript(() => {
       const defaultCoords = { lat: 2.2261, lng: 102.3285 };
       initMapAndSearch(defaultCoords);
@@ -184,7 +181,7 @@ export default function VetNearMePage() {
         );
       }
     });
-  }, []);
+  }, [user]);
 
   const initMapAndSearch = (coords) => {
     if (!mapRef.current || !window.google) return;
@@ -202,7 +199,6 @@ export default function VetNearMePage() {
     });
     mapInstanceRef.current = map;
 
-    // User location marker
     new window.google.maps.Marker({
       position: coords,
       map,
@@ -216,7 +212,6 @@ export default function VetNearMePage() {
       },
     });
 
-    // Reverse geocode for area name
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ location: coords }, (results) => {
       if (results?.[0]) {
@@ -249,6 +244,7 @@ export default function VetNearMePage() {
 
   const finalizeResults = async (results, coords, service, map) => {
     // Quick straight-line pre-filter to avoid hitting Distance Matrix with far-flung places
+    // (generous buffer since driving distance is always >= straight-line distance)
     const candidates = results.filter((place) =>
       haversineKm(coords.lat, coords.lng, place.geometry.location.lat(), place.geometry.location.lng()) <= 40
     );
@@ -278,6 +274,7 @@ export default function VetNearMePage() {
           setLoading(false);
           return;
         }
+        // Pre-sort by straight-line distance, take a wider pool since some will be closed
         const preSorted = widerResults
           .map((place) => ({
             place,
@@ -287,6 +284,7 @@ export default function VetNearMePage() {
           .slice(0, 20)
           .map((x) => x.place);
 
+        // Fetch opening hours for the whole pool BEFORE picking, so we can check who's actually open
         const withDetails = await Promise.all(
           preSorted.map((place) =>
             new Promise((resolve) => {
@@ -299,16 +297,16 @@ export default function VetNearMePage() {
         );
 
         const driving = await getDrivingDistances(coords, withDetails);
-        const widerWithDist = withDetails.map((place, i) => ({
+        const withDist = withDetails.map((place, i) => ({
           ...place,
           distKm: driving[i].distKm,
           durationText: driving[i].durationText,
         }));
-        widerWithDist.sort((a, b) => a.distKm - b.distKm);
+        withDist.sort((a, b) => a.distKm - b.distKm);
 
-        // Prefer the 3 closest that are currently OPEN; fill remaining slots with closest closed ones if needed
-        const openOnes = widerWithDist.filter((v) => isOpenNow(v));
-        const closedOnes = widerWithDist.filter((v) => !isOpenNow(v));
+        // Prefer the 3 closest that are currently OPEN; if fewer than 3 are open, fill remaining slots with closest closed ones
+        const openOnes = withDist.filter((v) => isOpenNow(v));
+        const closedOnes = withDist.filter((v) => !isOpenNow(v));
         const finalThree = [...openOnes, ...closedOnes].slice(0, 3);
 
         setVets(finalThree);
@@ -388,9 +386,9 @@ export default function VetNearMePage() {
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "#F5F2EE", fontFamily: "'Nunito', sans-serif" }}>
-      <Sidebar userName={userName} />
+      <ShelterSidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <TopBar />
+        <ShelterTopBar />
         <main className="flex-1 overflow-y-auto p-6">
 
           <div className="mb-5">
@@ -537,16 +535,6 @@ export default function VetNearMePage() {
                           {label}
                         </p>
                       </div>
-                    </div>
-
-                    {/* Species tags */}
-                    <div className="flex gap-1.5 flex-wrap mb-4">
-                      {tags.filter((t) => t !== "24/7").map((tag) => (
-                        <span key={tag} className="text-xs px-2 py-0.5 rounded-full"
-                          style={{ backgroundColor: "#F5F2EE", color: "#6B5E52" }}>
-                          {tag}
-                        </span>
-                      ))}
                     </div>
 
                     {/* Buttons */}
