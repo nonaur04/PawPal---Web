@@ -176,29 +176,31 @@ export default function HomePage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
         <main className="flex-1 p-6 overflow-y-auto">
-          <HeroBanner name={userName.split(" ")[0]} />
-          <SpeciesFilter active={activeSpecies} onSelect={setActiveSpecies} />
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <p className="text-sm" style={{ color: "#9B8778" }}>Loading pets...</p>
-            </div>
-          ) : (
-            <>
-              <PetSection
-                title="Pets Near You"
-                subtitle="Within 30 km"
-                pets={nearby.map(toCardPet)}
-                browseType="nearby"
-              />
-              <PetSection
-                title="Based on your preference"
-                subtitle="Cats that match your saved preferences"
-                pets={preference.map(toCardPet)}
-                browseType="preference"
-              />
-              <YourListings listings={userPets.map(toListingPet)} />
-            </>
-          )}
+          <div className="mx-auto" style={{ maxWidth: 1100 }}>
+            <HeroBanner name={userName.split(" ")[0]} />
+            <SpeciesFilter active={activeSpecies} onSelect={setActiveSpecies} />
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <p className="text-sm" style={{ color: "#9B8778" }}>Loading pets...</p>
+              </div>
+            ) : (
+              <>
+                <PetSection
+                  title="Pets Near You"
+                  subtitle="Within 30 km"
+                  pets={nearby.map(toCardPet)}
+                  browseType="nearby"
+                />
+                <PetSection
+                  title="Based on your preference"
+                  subtitle="Cats that match your saved preferences"
+                  pets={preference.map(toCardPet)}
+                  browseType="preference"
+                />
+                <YourListings listings={userPets.map(toListingPet)} />
+              </>
+            )}
+          </div>
         </main>
       </div>
     </div>

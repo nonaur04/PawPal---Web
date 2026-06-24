@@ -88,33 +88,35 @@ export default function MyStrayReportsPage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto p-6">
-          <button onClick={() => navigate("/reports")} className="flex items-center gap-1 text-sm font-semibold mb-4" style={{ color: "#6B5E52" }}>‹ Back to Reports</button>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl font-black" style={{ color: "#3D2B1F" }}>Your stray reports</h1>
-            <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#FFF3E0", color: "#F5A623" }}>You</span>
-          </div>
-          <p className="text-sm mb-6" style={{ color: "#9B8778" }}>Every stray you've reported and its current status</p>
-          <div className="grid grid-cols-3 gap-4 mb-6 max-w-2xl">
-            {[{ value: reports.length, label: "Reported" }, { value: active.length, label: "Active" }, { value: resolved.length, label: "Resolved" }].map((s) => (
-              <div key={s.label} className="rounded-2xl p-5 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
-                <p className="text-3xl font-black mb-1" style={{ color: "#F5A623" }}>{s.value}</p>
-                <p className="text-sm" style={{ color: "#9B8778" }}>{s.label}</p>
-              </div>
-            ))}
-          </div>
-          {loading ? <div className="space-y-3 max-w-3xl">{[1,2,3].map((i) => <div key={i} className="rounded-2xl h-24 animate-pulse" style={{ backgroundColor: "white" }} />)}</div>
-            : reports.length === 0 ? (
-              <div className="rounded-2xl p-8 text-center max-w-md" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
-                <p className="text-3xl mb-3">🐾</p>
-                <p className="font-black mb-1" style={{ color: "#3D2B1F" }}>No reports yet</p>
-                <p className="text-sm mb-4" style={{ color: "#9B8778" }}>Help a stray by filing your first report.</p>
-                <button onClick={() => navigate("/reports/new-stray")} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: "#F5A623" }}>+ New report</button>
-              </div>
-            ) : (
-              <div className="space-y-3 max-w-3xl">
-                {reports.map((r) => <StrayRow key={r.id} report={r} onClick={() => navigate(`/reports/stray/${r.id}`)} />)}
-              </div>
-            )}
+          <div className="mx-auto" style={{ maxWidth: 1100 }}>
+            <button onClick={() => navigate("/reports")} className="flex items-center gap-1 text-sm font-semibold mb-4" style={{ color: "#6B5E52" }}>‹ Back to Reports</button>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-2xl font-black" style={{ color: "#3D2B1F" }}>Your stray reports</h1>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#FFF3E0", color: "#F5A623" }}>You</span>
+            </div>
+            <p className="text-sm mb-6" style={{ color: "#9B8778" }}>Every stray you've reported and its current status</p>
+            <div className="grid grid-cols-3 gap-4 mb-6 max-w-2xl">
+              {[{ value: reports.length, label: "Reported" }, { value: active.length, label: "Active" }, { value: resolved.length, label: "Resolved" }].map((s) => (
+                <div key={s.label} className="rounded-2xl p-5 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+                  <p className="text-3xl font-black mb-1" style={{ color: "#F5A623" }}>{s.value}</p>
+                  <p className="text-sm" style={{ color: "#9B8778" }}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+            {loading ? <div className="space-y-3 max-w-3xl">{[1,2,3].map((i) => <div key={i} className="rounded-2xl h-24 animate-pulse" style={{ backgroundColor: "white" }} />)}</div>
+              : reports.length === 0 ? (
+                <div className="rounded-2xl p-8 text-center max-w-md" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+                  <p className="text-3xl mb-3">🐾</p>
+                  <p className="font-black mb-1" style={{ color: "#3D2B1F" }}>No reports yet</p>
+                  <p className="text-sm mb-4" style={{ color: "#9B8778" }}>Help a stray by filing your first report.</p>
+                  <button onClick={() => navigate("/reports/new-stray")} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: "#F5A623" }}>+ New report</button>
+                </div>
+              ) : (
+                <div className="space-y-3 max-w-3xl">
+                  {reports.map((r) => <StrayRow key={r.id} report={r} onClick={() => navigate(`/reports/stray/${r.id}`)} />)}
+                </div>
+              )}
+          </div> 
         </main>
       </div>
     </div>

@@ -179,82 +179,84 @@ export default function BrowseAllPetsPage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto p-6">
+          <div className="mx-auto" style={{ maxWidth: 1100 }}>
 
-          <button
-            onClick={() => navigate("/home")}
-            className="flex items-center gap-1 text-sm font-semibold mb-4"
-            style={{ color: "#6B5E52" }}
-          >
-            ‹ Back to discover
-          </button>
+            <button
+              onClick={() => navigate("/home")}
+              className="flex items-center gap-1 text-sm font-semibold mb-4"
+              style={{ color: "#6B5E52" }}
+            >
+              ‹ Back to discover
+            </button>
 
-          <div className="flex items-start justify-between mb-2">
-            <div>
-              <h1 className="text-2xl font-black" style={{ color: "#3D2B1F" }}>{config.title}</h1>
-              <p className="text-sm mt-0.5" style={{ color: "#9B8778" }}>{config.subtitle}</p>
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <h1 className="text-2xl font-black" style={{ color: "#3D2B1F" }}>{config.title}</h1>
+                <p className="text-sm mt-0.5" style={{ color: "#9B8778" }}>{config.subtitle}</p>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ backgroundColor: "white", border: "1px solid #EEE8E0", width: 260 }}>
+                <span className="text-gray-400 text-sm">🔍</span>
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search name, breed, area"
+                  className="flex-1 bg-transparent text-sm outline-none placeholder-gray-300"
+                  style={{ fontFamily: "'Nunito', sans-serif" }}
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ backgroundColor: "white", border: "1px solid #EEE8E0", width: 260 }}>
-              <span className="text-gray-400 text-sm">🔍</span>
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search name, breed, area"
-                className="flex-1 bg-transparent text-sm outline-none placeholder-gray-300"
-                style={{ fontFamily: "'Nunito', sans-serif" }}
-              />
-            </div>
+
+            {/* Species tabs — hidden for preference type since it's already filtered to cats */}
+            {browseType !== "preference" && (
+              <div className="flex gap-2 flex-wrap mb-4 mt-4">
+                {SPECIES_TABS.map((tab) => {
+                  const isActive = activeSpecies === tab.label;
+                  return (
+                    <button
+                      key={tab.label}
+                      onClick={() => setActiveSpecies(tab.label)}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition"
+                      style={{
+                        backgroundColor: isActive ? "#FFF3E0" : "white",
+                        border: isActive ? "1.5px solid #F5A623" : "1.5px solid #EEE8E0",
+                        color: isActive ? "#F5A623" : "#6B5E52",
+                      }}
+                    >
+                      <span>{tab.emoji}</span>
+                      {tab.label}
+                      <span className="ml-0.5 text-xs font-bold" style={{ color: isActive ? "#F5A623" : "#9B8778" }}>
+                        {counts[tab.label] ?? 0}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <p className="text-sm font-semibold mb-4" style={{ color: "#9B8778" }}>
+              {filtered.length} pet{filtered.length !== 1 ? "s" : ""} available
+            </p>
+
+            {loading ? (
+              <div className="grid grid-cols-4 gap-4">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <div key={i} className="rounded-2xl animate-pulse" style={{ height: 260, backgroundColor: "white" }} />
+                ))}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <p className="text-4xl mb-3">🐾</p>
+                <p className="font-black text-lg mb-1" style={{ color: "#3D2B1F" }}>No pets found</p>
+                <p className="text-sm" style={{ color: "#9B8778" }}>Try a different filter or search term</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-4">
+                {filtered.map((p) => (
+                  <PetCard key={p.id} pet={toCardPet(p)} />
+                ))}
+              </div>
+            )}
           </div>
-
-          {/* Species tabs — hidden for preference type since it's already filtered to cats */}
-          {browseType !== "preference" && (
-            <div className="flex gap-2 flex-wrap mb-4 mt-4">
-              {SPECIES_TABS.map((tab) => {
-                const isActive = activeSpecies === tab.label;
-                return (
-                  <button
-                    key={tab.label}
-                    onClick={() => setActiveSpecies(tab.label)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition"
-                    style={{
-                      backgroundColor: isActive ? "#FFF3E0" : "white",
-                      border: isActive ? "1.5px solid #F5A623" : "1.5px solid #EEE8E0",
-                      color: isActive ? "#F5A623" : "#6B5E52",
-                    }}
-                  >
-                    <span>{tab.emoji}</span>
-                    {tab.label}
-                    <span className="ml-0.5 text-xs font-bold" style={{ color: isActive ? "#F5A623" : "#9B8778" }}>
-                      {counts[tab.label] ?? 0}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          <p className="text-sm font-semibold mb-4" style={{ color: "#9B8778" }}>
-            {filtered.length} pet{filtered.length !== 1 ? "s" : ""} available
-          </p>
-
-          {loading ? (
-            <div className="grid grid-cols-4 gap-4">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="rounded-2xl animate-pulse" style={{ height: 260, backgroundColor: "white" }} />
-              ))}
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <p className="text-4xl mb-3">🐾</p>
-              <p className="font-black text-lg mb-1" style={{ color: "#3D2B1F" }}>No pets found</p>
-              <p className="text-sm" style={{ color: "#9B8778" }}>Try a different filter or search term</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-4 gap-4">
-              {filtered.map((p) => (
-                <PetCard key={p.id} pet={toCardPet(p)} />
-              ))}
-            </div>
-          )}
         </main>
       </div>
     </div>

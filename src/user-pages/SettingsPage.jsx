@@ -119,103 +119,105 @@ export default function SettingsPage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="text-2xl font-black mb-1" style={{ color: "#3D2B1F" }}>Settings</h1>
-          <p className="text-sm mb-6" style={{ color: "#9B8778" }}>Manage your account and preferences</p>
+          <div className="mx-auto" style={{ maxWidth: 1100 }}>
+            <h1 className="text-2xl font-black mb-1" style={{ color: "#3D2B1F" }}>Settings</h1>
+            <p className="text-sm mb-6" style={{ color: "#9B8778" }}>Manage your account and preferences</p>
 
-          {loading ? (
-            <div className="space-y-4">{[1,2,3].map((i) => <div key={i} className="rounded-2xl h-32 animate-pulse" style={{ backgroundColor: "white" }} />)}</div>
-          ) : (
-            <div className="max-w-3xl space-y-5">
+            {loading ? (
+              <div className="space-y-4">{[1,2,3].map((i) => <div key={i} className="rounded-2xl h-32 animate-pulse" style={{ backgroundColor: "white" }} />)}</div>
+            ) : (
+              <div className="max-w-3xl space-y-5">
 
-              {/* Account */}
-              <div className="rounded-2xl p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
-                <h2 className="font-black text-base mb-5" style={{ color: "#3D2B1F" }}>Account</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Full name</label>
-                    <input value={fullName} onChange={(e) => setFullName(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                      style={inputStyle} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Email</label>
-                    <input value={email} disabled
-                      className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                      style={{ ...inputStyle, backgroundColor: "#F5F2EE", color: "#9B8778", cursor: "not-allowed" }} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Phone</label>
-                    <input value={phone} onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+60 12 345 6789"
-                      className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                      style={inputStyle} />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-3 mt-5">
-                  <button onClick={handleDiscard}
-                    className="px-5 py-2.5 rounded-xl text-sm font-bold"
-                    style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}>
-                    Discard
-                  </button>
-                  <button onClick={handleSave} disabled={saving}
-                    className="px-5 py-2.5 rounded-xl text-sm font-bold text-white"
-                    style={{ backgroundColor: saving ? "#F8C97A" : "#F5A623" }}>
-                    {saved ? "Saved ✓" : saving ? "Saving..." : "Save changes"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Adoption preferences */}
-              <div className="rounded-2xl p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
-                <h2 className="font-black text-base mb-1" style={{ color: "#3D2B1F" }}>Adoption preferences</h2>
-                <p className="text-sm mb-4" style={{ color: "#9B8778" }}>Update what kind of pet you're looking to adopt.</p>
-                <button onClick={() => navigate("/home")}
-                  className="px-4 py-2.5 rounded-xl text-sm font-bold"
-                  style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}>
-                  Edit preferences →
-                </button>
-              </div>
-
-              {/* Notifications */}
-              <div className="rounded-2xl p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
-                <h2 className="font-black text-base mb-5" style={{ color: "#3D2B1F" }}>Notifications</h2>
-                <div className="space-y-4">
-                  {NOTIF_LABELS.map((n, i) => (
-                    <div key={n.key}>
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold" style={{ color: "#3D2B1F" }}>{n.label}</p>
-                        <Toggle value={notifs[n.key]} onChange={(val) => {
-                          setNotifs((prev) => ({ ...prev, [n.key]: val }));
-                        }} />
-                      </div>
-                      {i < NOTIF_LABELS.length - 1 && <div className="mt-4" style={{ borderBottom: "1px solid #F5F2EE" }} />}
+                {/* Account */}
+                <div className="rounded-2xl p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+                  <h2 className="font-black text-base mb-5" style={{ color: "#3D2B1F" }}>Account</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Full name</label>
+                      <input value={fullName} onChange={(e) => setFullName(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                        style={inputStyle} />
                     </div>
-                  ))}
+                    <div>
+                      <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Email</label>
+                      <input value={email} disabled
+                        className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                        style={{ ...inputStyle, backgroundColor: "#F5F2EE", color: "#9B8778", cursor: "not-allowed" }} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Phone</label>
+                      <input value={phone} onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+60 12 345 6789"
+                        className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                        style={inputStyle} />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 mt-5">
+                    <button onClick={handleDiscard}
+                      className="px-5 py-2.5 rounded-xl text-sm font-bold"
+                      style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}>
+                      Discard
+                    </button>
+                    <button onClick={handleSave} disabled={saving}
+                      className="px-5 py-2.5 rounded-xl text-sm font-bold text-white"
+                      style={{ backgroundColor: saving ? "#F8C97A" : "#F5A623" }}>
+                      {saved ? "Saved ✓" : saving ? "Saving..." : "Save changes"}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex justify-end mt-5">
-                  <button onClick={handleSave} disabled={saving}
-                    className="px-5 py-2.5 rounded-xl text-sm font-bold text-white"
-                    style={{ backgroundColor: saving ? "#F8C97A" : "#F5A623" }}>
-                    {saved ? "Saved ✓" : saving ? "Saving..." : "Save changes"}
+
+                {/* Adoption preferences */}
+                <div className="rounded-2xl p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+                  <h2 className="font-black text-base mb-1" style={{ color: "#3D2B1F" }}>Adoption preferences</h2>
+                  <p className="text-sm mb-4" style={{ color: "#9B8778" }}>Update what kind of pet you're looking to adopt.</p>
+                  <button onClick={() => navigate("/home")}
+                    className="px-4 py-2.5 rounded-xl text-sm font-bold"
+                    style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}>
+                    Edit preferences →
+                  </button>
+                </div>
+
+                {/* Notifications */}
+                <div className="rounded-2xl p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+                  <h2 className="font-black text-base mb-5" style={{ color: "#3D2B1F" }}>Notifications</h2>
+                  <div className="space-y-4">
+                    {NOTIF_LABELS.map((n, i) => (
+                      <div key={n.key}>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-semibold" style={{ color: "#3D2B1F" }}>{n.label}</p>
+                          <Toggle value={notifs[n.key]} onChange={(val) => {
+                            setNotifs((prev) => ({ ...prev, [n.key]: val }));
+                          }} />
+                        </div>
+                        {i < NOTIF_LABELS.length - 1 && <div className="mt-4" style={{ borderBottom: "1px solid #F5F2EE" }} />}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-end mt-5">
+                    <button onClick={handleSave} disabled={saving}
+                      className="px-5 py-2.5 rounded-xl text-sm font-bold text-white"
+                      style={{ backgroundColor: saving ? "#F8C97A" : "#F5A623" }}>
+                      {saved ? "Saved ✓" : saving ? "Saving..." : "Save changes"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Sign out + Delete */}
+                <div className="rounded-2xl p-6 space-y-3" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+                  <button onClick={() => setShowSignOutConfirm(true)}
+                    className="w-full py-3 rounded-xl text-sm font-bold"
+                    style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}>
+                    Sign out
+                  </button>
+                  <button onClick={() => setShowDeleteConfirm(true)}
+                    className="w-full py-3 rounded-xl text-sm font-bold"
+                    style={{ border: "1.5px solid #EF4444", color: "#EF4444", backgroundColor: "white" }}>
+                    Delete account
                   </button>
                 </div>
               </div>
-
-              {/* Sign out + Delete */}
-              <div className="rounded-2xl p-6 space-y-3" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
-                <button onClick={() => setShowSignOutConfirm(true)}
-                  className="w-full py-3 rounded-xl text-sm font-bold"
-                  style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}>
-                  Sign out
-                </button>
-                <button onClick={() => setShowDeleteConfirm(true)}
-                  className="w-full py-3 rounded-xl text-sm font-bold"
-                  style={{ border: "1.5px solid #EF4444", color: "#EF4444", backgroundColor: "white" }}>
-                  Delete account
-                </button>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </main>
       </div>
 

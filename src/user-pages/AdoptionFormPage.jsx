@@ -179,67 +179,69 @@ Evaluate the applicant's suitability. Return ONLY valid JSON, no markdown, no ba
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <TopBar />
           <main className="flex-1 overflow-y-auto p-6 flex items-start justify-center pt-10">
-            <div className="max-w-lg w-full rounded-3xl p-8 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+            <div className="mx-auto w-full" style={{ maxWidth: 1100 }}>
+              <div className="max-w-lg w-full mx-auto rounded-3xl p-8 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
 
-              {/* Party icon */}
-              <div className="text-5xl mb-4">🎉</div>
+                {/* Party icon */}
+                <div className="text-5xl mb-4">🎉</div>
 
-              <h2 className="text-2xl font-black mb-2" style={{ color: "#3D2B1F" }}>Application submitted!</h2>
-              <p className="text-sm mb-6 leading-relaxed" style={{ color: "#9B8778" }}>
-                {pet?.ownerId ? "The shelter" : "The owner"} has received your application for {name}.<br />
-                Here's your AI suitability score:
-              </p>
+                <h2 className="text-2xl font-black mb-2" style={{ color: "#3D2B1F" }}>Application submitted!</h2>
+                <p className="text-sm mb-6 leading-relaxed" style={{ color: "#9B8778" }}>
+                  {pet?.ownerId ? "The shelter" : "The owner"} has received your application for {name}.<br />
+                  Here's your AI suitability score:
+                </p>
 
-              {/* Score card */}
-              <div className="rounded-2xl p-8 mb-6" style={{ backgroundColor: "#FFF8F0" }}>
-                {/* Circular score */}
-                <div className="flex items-center justify-center mb-4">
-                  <svg width="140" height="140" viewBox="0 0 140 140">
-                    {/* Background circle */}
-                    <circle cx="70" cy="70" r="54" fill="none" stroke="#EEE8E0" strokeWidth="10" />
-                    {/* Score arc */}
-                    <circle
-                      cx="70" cy="70" r="54"
-                      fill="none"
-                      stroke={scoreColor}
-                      strokeWidth="10"
-                      strokeLinecap="round"
-                      strokeDasharray={circumference}
-                      strokeDashoffset={filled}
-                      transform="rotate(-90 70 70)"
-                    />
-                    {/* Score number */}
-                    <text x="70" y="65" textAnchor="middle" dominantBaseline="middle"
-                      style={{ fontSize: 32, fontWeight: 900, fill: "#3D2B1F", fontFamily: "'Nunito', sans-serif" }}>
-                      {score}
-                    </text>
-                    <text x="70" y="88" textAnchor="middle"
-                      style={{ fontSize: 13, fill: "#9B8778", fontFamily: "'Nunito', sans-serif" }}>
-                      /100
-                    </text>
-                  </svg>
+                {/* Score card */}
+                <div className="rounded-2xl p-8 mb-6" style={{ backgroundColor: "#FFF8F0" }}>
+                  {/* Circular score */}
+                  <div className="flex items-center justify-center mb-4">
+                    <svg width="140" height="140" viewBox="0 0 140 140">
+                      {/* Background circle */}
+                      <circle cx="70" cy="70" r="54" fill="none" stroke="#EEE8E0" strokeWidth="10" />
+                      {/* Score arc */}
+                      <circle
+                        cx="70" cy="70" r="54"
+                        fill="none"
+                        stroke={scoreColor}
+                        strokeWidth="10"
+                        strokeLinecap="round"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={filled}
+                        transform="rotate(-90 70 70)"
+                      />
+                      {/* Score number */}
+                      <text x="70" y="65" textAnchor="middle" dominantBaseline="middle"
+                        style={{ fontSize: 32, fontWeight: 900, fill: "#3D2B1F", fontFamily: "'Nunito', sans-serif" }}>
+                        {score}
+                      </text>
+                      <text x="70" y="88" textAnchor="middle"
+                        style={{ fontSize: 13, fill: "#9B8778", fontFamily: "'Nunito', sans-serif" }}>
+                        /100
+                      </text>
+                    </svg>
+                  </div>
+
+                  <p className="text-xl font-black mb-2" style={{ color: "#3D2B1F" }}>{label}</p>
+                  <p className="text-sm leading-relaxed" style={{ color: "#6B5E52" }}>{aiResult.summary}</p>
                 </div>
 
-                <p className="text-xl font-black mb-2" style={{ color: "#3D2B1F" }}>{label}</p>
-                <p className="text-sm leading-relaxed" style={{ color: "#6B5E52" }}>{aiResult.summary}</p>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => navigate("/home")}
-                  className="flex-1 py-3.5 rounded-2xl text-sm font-bold transition"
-                  style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}
-                >
-                  Back to discover
-                </button>
-                <button
-                  onClick={() => navigate("/messages")}
-                  className="flex-1 py-3.5 rounded-2xl text-sm font-bold text-white transition"
-                  style={{ backgroundColor: "#F5A623" }}
-                >
-                  Message shelter
-                </button>
+                {/* Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => navigate("/home")}
+                    className="flex-1 py-3.5 rounded-2xl text-sm font-bold transition"
+                    style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}
+                  >
+                    Back to discover
+                  </button>
+                  <button
+                    onClick={() => navigate("/messages")}
+                    className="flex-1 py-3.5 rounded-2xl text-sm font-bold text-white transition"
+                    style={{ backgroundColor: "#F5A623" }}
+                  >
+                    Message shelter
+                  </button>
+                </div>
               </div>
             </div>
           </main>
@@ -254,106 +256,108 @@ Evaluate the applicant's suitability. Return ONLY valid JSON, no markdown, no ba
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto p-6">
+          <div className="mx-auto" style={{ maxWidth: 1100 }}>
 
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-semibold mb-4" style={{ color: "#6B5E52" }}>
-            ‹ Back
-          </button>
+            <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-semibold mb-4" style={{ color: "#6B5E52" }}>
+              ‹ Back
+            </button>
 
-          <h1 className="text-2xl font-black mb-1" style={{ color: "#3D2B1F" }}>
-            Adoption screening for {name}
-          </h1>
-          <p className="text-sm mb-4" style={{ color: "#9B8778" }}>
-            Answer all {questions.length} questions below, then submit your application.
-          </p>
-
-          <div className="max-w-3xl mb-6">
-            <p className="text-xs font-semibold mb-1.5" style={{ color: "#9B8778" }}>
-              {answeredCount} of {questions.length} answered
+            <h1 className="text-2xl font-black mb-1" style={{ color: "#3D2B1F" }}>
+              Adoption screening for {name}
+            </h1>
+            <p className="text-sm mb-4" style={{ color: "#9B8778" }}>
+              Answer all {questions.length} questions below, then submit your application.
             </p>
-            <div className="h-2 rounded-full" style={{ backgroundColor: "#EEE8E0" }}>
-              <div
-                className="h-2 rounded-full transition-all"
-                style={{
-                  width: questions.length ? `${(answeredCount / questions.length) * 100}%` : "0%",
-                  backgroundColor: "#F5A623",
-                }}
-              />
-            </div>
-          </div>
 
-          {loadingQuestions ? (
-            <div className="max-w-3xl">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="rounded-2xl p-6 mb-4 animate-pulse" style={{ backgroundColor: "white", height: 180 }} />
-              ))}
-              <p className="text-center text-sm mt-2" style={{ color: "#9B8778" }}>
-                ✨ AI is generating questions tailored to {name}...
+            <div className="max-w-3xl mb-6">
+              <p className="text-xs font-semibold mb-1.5" style={{ color: "#9B8778" }}>
+                {answeredCount} of {questions.length} answered
               </p>
-            </div>
-          ) : (
-            <div className="max-w-3xl space-y-4">
-              {questions.map((q) => (
-                <div key={q.id} className="rounded-2xl p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-black shrink-0"
-                      style={{ backgroundColor: "#FFF3E0", color: "#F5A623" }}>
-                      {q.id}
-                    </span>
-                    <span className="text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1"
-                      style={{ backgroundColor: "#FFF3E0", color: "#F5A623" }}>
-                      ✨ AI · {q.context}
-                    </span>
-                  </div>
-
-                  <p className="font-black text-base mb-4" style={{ color: "#3D2B1F" }}>{q.question}</p>
-
-                  {q.type === "multiple_choice" && q.options?.map((opt) => (
-                    <button key={opt} onClick={() => handleAnswer(q.id, opt)}
-                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl mb-2 text-sm font-semibold text-left transition"
-                      style={{
-                        border: answers[q.id] === opt ? "1.5px solid #F5A623" : "1.5px solid #EEE8E0",
-                        backgroundColor: answers[q.id] === opt ? "#FFF3E0" : "white",
-                        color: answers[q.id] === opt ? "#F5A623" : "#6B5E52",
-                      }}>
-                      <span className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0"
-                        style={{ borderColor: answers[q.id] === opt ? "#F5A623" : "#D1C9C0" }}>
-                        {answers[q.id] === opt && (
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#F5A623" }} />
-                        )}
-                      </span>
-                      {opt}
-                    </button>
-                  ))}
-
-                  {q.type === "short_answer" && (
-                    <textarea rows={3} placeholder="Type your answer here..."
-                      value={answers[q.id] ?? ""}
-                      onChange={(e) => handleAnswer(q.id, e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none transition"
-                      style={{
-                        border: answers[q.id] ? "1.5px solid #F5A623" : "1.5px solid #EEE8E0",
-                        backgroundColor: "#FAFAFA",
-                        color: "#3D2B1F",
-                        fontFamily: "'Nunito', sans-serif",
-                      }}
-                    />
-                  )}
-                </div>
-              ))}
-
-              {questions.length > 0 && (
-                <button onClick={handleSubmit}
-                  disabled={answeredCount < questions.length || submitting}
-                  className="w-full py-4 rounded-2xl text-white font-black text-base transition mt-2"
+              <div className="h-2 rounded-full" style={{ backgroundColor: "#EEE8E0" }}>
+                <div
+                  className="h-2 rounded-full transition-all"
                   style={{
-                    backgroundColor: answeredCount < questions.length ? "#F8C97A" : "#F5A623",
-                    cursor: answeredCount < questions.length ? "not-allowed" : "pointer",
-                  }}>
-                  {submitting ? "Submitting & scoring..." : `Submit application for ${name}`}
-                </button>
-              )}
+                    width: questions.length ? `${(answeredCount / questions.length) * 100}%` : "0%",
+                    backgroundColor: "#F5A623",
+                  }}
+                />
+              </div>
             </div>
-          )}
+
+            {loadingQuestions ? (
+              <div className="max-w-3xl">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="rounded-2xl p-6 mb-4 animate-pulse" style={{ backgroundColor: "white", height: 180 }} />
+                ))}
+                <p className="text-center text-sm mt-2" style={{ color: "#9B8778" }}>
+                  ✨ AI is generating questions tailored to {name}...
+                </p>
+              </div>
+            ) : (
+              <div className="max-w-3xl space-y-4">
+                {questions.map((q) => (
+                  <div key={q.id} className="rounded-2xl p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-black shrink-0"
+                        style={{ backgroundColor: "#FFF3E0", color: "#F5A623" }}>
+                        {q.id}
+                      </span>
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1"
+                        style={{ backgroundColor: "#FFF3E0", color: "#F5A623" }}>
+                        ✨ AI · {q.context}
+                      </span>
+                    </div>
+
+                    <p className="font-black text-base mb-4" style={{ color: "#3D2B1F" }}>{q.question}</p>
+
+                    {q.type === "multiple_choice" && q.options?.map((opt) => (
+                      <button key={opt} onClick={() => handleAnswer(q.id, opt)}
+                        className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl mb-2 text-sm font-semibold text-left transition"
+                        style={{
+                          border: answers[q.id] === opt ? "1.5px solid #F5A623" : "1.5px solid #EEE8E0",
+                          backgroundColor: answers[q.id] === opt ? "#FFF3E0" : "white",
+                          color: answers[q.id] === opt ? "#F5A623" : "#6B5E52",
+                        }}>
+                        <span className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0"
+                          style={{ borderColor: answers[q.id] === opt ? "#F5A623" : "#D1C9C0" }}>
+                          {answers[q.id] === opt && (
+                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#F5A623" }} />
+                          )}
+                        </span>
+                        {opt}
+                      </button>
+                    ))}
+
+                    {q.type === "short_answer" && (
+                      <textarea rows={3} placeholder="Type your answer here..."
+                        value={answers[q.id] ?? ""}
+                        onChange={(e) => handleAnswer(q.id, e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none transition"
+                        style={{
+                          border: answers[q.id] ? "1.5px solid #F5A623" : "1.5px solid #EEE8E0",
+                          backgroundColor: "#FAFAFA",
+                          color: "#3D2B1F",
+                          fontFamily: "'Nunito', sans-serif",
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
+
+                {questions.length > 0 && (
+                  <button onClick={handleSubmit}
+                    disabled={answeredCount < questions.length || submitting}
+                    className="w-full py-4 rounded-2xl text-white font-black text-base transition mt-2"
+                    style={{
+                      backgroundColor: answeredCount < questions.length ? "#F8C97A" : "#F5A623",
+                      cursor: answeredCount < questions.length ? "not-allowed" : "pointer",
+                    }}>
+                    {submitting ? "Submitting & scoring..." : `Submit application for ${name}`}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </main>
       </div>
     </div>

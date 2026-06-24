@@ -392,183 +392,185 @@ export default function VetNearMePage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto p-6">
+          <div className="mx-auto" style={{ maxWidth: 1100 }}>
 
-          <div className="mb-5">
-            <h1 className="text-2xl font-black flex items-center gap-2" style={{ color: "#3D2B1F" }}>
-              Vet Near Me <span>🩺</span>
-            </h1>
-            <p className="text-sm mt-0.5" style={{ color: "#9B8778" }}>
-              {usedFallback
-                ? `No clinics within 15km — showing the closest ${vets.length} (prioritizing open clinics)`
-                : `Trusted clinics near ${areaName}`}
-            </p>
-          </div>
-
-          {/* Filter toggle */}
-          <div className="flex items-center gap-3 mb-5">
-            <button
-              onClick={() => setFilter("all")}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition"
-              style={{
-                backgroundColor: filter === "all" ? "#FFF3E0" : "white",
-                border: filter === "all" ? "1.5px solid #F5A623" : "1.5px solid #EEE8E0",
-                color: filter === "all" ? "#F5A623" : "#6B5E52",
-              }}
-            >
-              All clinics
-              <span
-                className="text-xs font-bold px-1.5 py-0.5 rounded-full"
-                style={{ backgroundColor: filter === "all" ? "#F5A623" : "#F5F2EE", color: filter === "all" ? "white" : "#9B8778" }}
-              >
-                {vets.length}
-              </span>
-            </button>
-            <button
-              onClick={() => setFilter("open")}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition"
-              style={{
-                backgroundColor: filter === "open" ? "#FFF3E0" : "white",
-                border: filter === "open" ? "1.5px solid #F5A623" : "1.5px solid #EEE8E0",
-                color: filter === "open" ? "#F5A623" : "#6B5E52",
-              }}
-            >
-              🟢 Open now
-              <span
-                className="text-xs font-bold px-1.5 py-0.5 rounded-full"
-                style={{ backgroundColor: filter === "open" ? "#F5A623" : "#F5F2EE", color: filter === "open" ? "white" : "#9B8778" }}
-              >
-                {countOpenNow}
-              </span>
-            </button>
-            <button
-              onClick={() => setFilter("24/7")}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition"
-              style={{
-                backgroundColor: filter === "24/7" ? "#FFF3E0" : "white",
-                border: filter === "24/7" ? "1.5px solid #F5A623" : "1.5px solid #EEE8E0",
-                color: filter === "24/7" ? "#F5A623" : "#6B5E52",
-              }}
-            >
-              🚨 Open 24/7
-              <span
-                className="text-xs font-bold px-1.5 py-0.5 rounded-full"
-                style={{ backgroundColor: filter === "24/7" ? "#F5A623" : "#F5F2EE", color: filter === "24/7" ? "white" : "#9B8778" }}
-              >
-                {count24h}
-              </span>
-            </button>
-          </div>
-
-          {/* Map */}
-          <div className="rounded-2xl overflow-hidden mb-6" style={{ height: 280, border: "1px solid #EEE8E0" }}>
-            <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
-          </div>
-
-          {/* Vet cards */}
-          {loading ? (
-            <div className="grid grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="rounded-2xl p-5 animate-pulse" style={{ height: 180, backgroundColor: "white" }} />
-              ))}
-            </div>
-          ) : filteredVets.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <p className="text-3xl mb-3">🏥</p>
-              <p className="font-black mb-1" style={{ color: "#3D2B1F" }}>
-                {filter === "24/7" ? "No 24/7 clinics found nearby" : filter === "open" ? "No clinics open right now" : "No vets found nearby"}
-              </p>
-              <p className="text-sm" style={{ color: "#9B8778" }}>
-                {filter === "24/7" ? "Try viewing all clinics instead" : filter === "open" ? "Try the 24/7 filter or view all clinics" : "Try allowing location access"}
+            <div className="mb-5">
+              <h1 className="text-2xl font-black flex items-center gap-2" style={{ color: "#3D2B1F" }}>
+                Vet Near Me <span>🩺</span>
+              </h1>
+              <p className="text-sm mt-0.5" style={{ color: "#9B8778" }}>
+                {usedFallback
+                  ? `No clinics within 15km — showing the closest ${vets.length} (prioritizing open clinics)`
+                  : `Trusted clinics near ${areaName}`}
               </p>
             </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-4">
-              {filteredVets.map((vet) => {
-                const { open, label } = getOpenStatus(vet.opening_hours);
-                const tags = inferSpeciesTags(vet);
-                const is24 = tags.includes("24/7");
-                const isSelected = selectedVet === vet.place_id;
 
-                return (
-                  <div
-                    id={`vet-${vet.place_id}`}
-                    key={vet.place_id}
-                    onClick={() => {
-                      setSelectedVet(vet.place_id);
-                      mapInstanceRef.current?.panTo(vet.geometry.location);
-                    }}
-                    className="rounded-2xl p-5 cursor-pointer transition"
-                    style={{
-                      backgroundColor: "white",
-                      border: isSelected ? "2px solid #F5A623" : "1px solid #EEE8E0",
-                    }}
-                  >
-                    {/* Header */}
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
-                        style={{ backgroundColor: "#FFF3E0" }}>
-                        🩺
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                          <p className="font-black text-sm" style={{ color: "#3D2B1F" }}>{vet.name}</p>
-                          {is24 && (
-                            <span className="text-xs font-bold px-1.5 py-0.5 rounded"
-                              style={{ backgroundColor: "#FEE2E2", color: "#EF4444" }}>24/7</span>
-                          )}
+            {/* Filter toggle */}
+            <div className="flex items-center gap-3 mb-5">
+              <button
+                onClick={() => setFilter("all")}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition"
+                style={{
+                  backgroundColor: filter === "all" ? "#FFF3E0" : "white",
+                  border: filter === "all" ? "1.5px solid #F5A623" : "1.5px solid #EEE8E0",
+                  color: filter === "all" ? "#F5A623" : "#6B5E52",
+                }}
+              >
+                All clinics
+                <span
+                  className="text-xs font-bold px-1.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: filter === "all" ? "#F5A623" : "#F5F2EE", color: filter === "all" ? "white" : "#9B8778" }}
+                >
+                  {vets.length}
+                </span>
+              </button>
+              <button
+                onClick={() => setFilter("open")}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition"
+                style={{
+                  backgroundColor: filter === "open" ? "#FFF3E0" : "white",
+                  border: filter === "open" ? "1.5px solid #F5A623" : "1.5px solid #EEE8E0",
+                  color: filter === "open" ? "#F5A623" : "#6B5E52",
+                }}
+              >
+                🟢 Open now
+                <span
+                  className="text-xs font-bold px-1.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: filter === "open" ? "#F5A623" : "#F5F2EE", color: filter === "open" ? "white" : "#9B8778" }}
+                >
+                  {countOpenNow}
+                </span>
+              </button>
+              <button
+                onClick={() => setFilter("24/7")}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition"
+                style={{
+                  backgroundColor: filter === "24/7" ? "#FFF3E0" : "white",
+                  border: filter === "24/7" ? "1.5px solid #F5A623" : "1.5px solid #EEE8E0",
+                  color: filter === "24/7" ? "#F5A623" : "#6B5E52",
+                }}
+              >
+                🚨 Open 24/7
+                <span
+                  className="text-xs font-bold px-1.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: filter === "24/7" ? "#F5A623" : "#F5F2EE", color: filter === "24/7" ? "white" : "#9B8778" }}
+                >
+                  {count24h}
+                </span>
+              </button>
+            </div>
+
+            {/* Map */}
+            <div className="rounded-2xl overflow-hidden mb-6" style={{ height: 500, border: "1px solid #EEE8E0" }}>
+              <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
+            </div>
+
+            {/* Vet cards */}
+            {loading ? (
+              <div className="grid grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="rounded-2xl p-5 animate-pulse" style={{ height: 180, backgroundColor: "white" }} />
+                ))}
+              </div>
+            ) : filteredVets.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <p className="text-3xl mb-3">🏥</p>
+                <p className="font-black mb-1" style={{ color: "#3D2B1F" }}>
+                  {filter === "24/7" ? "No 24/7 clinics found nearby" : filter === "open" ? "No clinics open right now" : "No vets found nearby"}
+                </p>
+                <p className="text-sm" style={{ color: "#9B8778" }}>
+                  {filter === "24/7" ? "Try viewing all clinics instead" : filter === "open" ? "Try the 24/7 filter or view all clinics" : "Try allowing location access"}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-4">
+                {filteredVets.map((vet) => {
+                  const { open, label } = getOpenStatus(vet.opening_hours);
+                  const tags = inferSpeciesTags(vet);
+                  const is24 = tags.includes("24/7");
+                  const isSelected = selectedVet === vet.place_id;
+
+                  return (
+                    <div
+                      id={`vet-${vet.place_id}`}
+                      key={vet.place_id}
+                      onClick={() => {
+                        setSelectedVet(vet.place_id);
+                        mapInstanceRef.current?.panTo(vet.geometry.location);
+                      }}
+                      className="rounded-2xl p-5 cursor-pointer transition"
+                      style={{
+                        backgroundColor: "white",
+                        border: isSelected ? "2px solid #F5A623" : "1px solid #EEE8E0",
+                      }}
+                    >
+                      {/* Header */}
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
+                          style={{ backgroundColor: "#FFF3E0" }}>
+                          🩺
                         </div>
-                        <div className="flex items-center gap-2 text-xs" style={{ color: "#9B8778" }}>
-                          {vet.rating && (
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                            <p className="font-black text-sm" style={{ color: "#3D2B1F" }}>{vet.name}</p>
+                            {is24 && (
+                              <span className="text-xs font-bold px-1.5 py-0.5 rounded"
+                                style={{ backgroundColor: "#FEE2E2", color: "#EF4444" }}>24/7</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs" style={{ color: "#9B8778" }}>
+                            {vet.rating && (
+                              <span className="flex items-center gap-0.5">
+                                <span style={{ color: "#F5A623" }}>★</span>
+                                <span className="font-bold" style={{ color: "#3D2B1F" }}>{vet.rating}</span>
+                                <span>({vet.user_ratings_total ?? 0})</span>
+                              </span>
+                            )}
+                            {vet.rating && <span>·</span>}
                             <span className="flex items-center gap-0.5">
-                              <span style={{ color: "#F5A623" }}>★</span>
-                              <span className="font-bold" style={{ color: "#3D2B1F" }}>{vet.rating}</span>
-                              <span>({vet.user_ratings_total ?? 0})</span>
+                              <span style={{ color: "#EF4444" }}>📍</span>
+                              {vet.distKm.toFixed(1)} km
+                              {vet.durationText ? ` · ${vet.durationText}` : ""}
                             </span>
-                          )}
-                          {vet.rating && <span>·</span>}
-                          <span className="flex items-center gap-0.5">
-                            <span style={{ color: "#EF4444" }}>📍</span>
-                            {vet.distKm.toFixed(1)} km
-                            {vet.durationText ? ` · ${vet.durationText}` : ""}
-                          </span>
+                          </div>
+                          <p className="text-xs font-semibold mt-0.5"
+                            style={{ color: open === true ? "#16A34A" : open === false ? "#EF4444" : "#9B8778" }}>
+                            {label}
+                          </p>
                         </div>
-                        <p className="text-xs font-semibold mt-0.5"
-                          style={{ color: open === true ? "#16A34A" : open === false ? "#EF4444" : "#9B8778" }}>
-                          {label}
-                        </p>
+                      </div>
+
+                      {/* Species tags */}
+                      <div className="flex gap-1.5 flex-wrap mb-4">
+                        {tags.filter((t) => t !== "24/7").map((tag) => (
+                          <span key={tag} className="text-xs px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: "#F5F2EE", color: "#6B5E52" }}>
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Buttons */}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openDirections(vet); }}
+                          className="flex-1 py-2 rounded-xl text-sm font-bold transition"
+                          style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}>
+                          Directions
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); callVet(vet); }}
+                          className="flex-1 py-2 rounded-xl text-sm font-bold text-white transition"
+                          style={{ backgroundColor: "#F5A623" }}>
+                          Call
+                        </button>
                       </div>
                     </div>
-
-                    {/* Species tags */}
-                    <div className="flex gap-1.5 flex-wrap mb-4">
-                      {tags.filter((t) => t !== "24/7").map((tag) => (
-                        <span key={tag} className="text-xs px-2 py-0.5 rounded-full"
-                          style={{ backgroundColor: "#F5F2EE", color: "#6B5E52" }}>
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Buttons */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); openDirections(vet); }}
-                        className="flex-1 py-2 rounded-xl text-sm font-bold transition"
-                        style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}>
-                        Directions
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); callVet(vet); }}
-                        className="flex-1 py-2 rounded-xl text-sm font-bold text-white transition"
-                        style={{ backgroundColor: "#F5A623" }}>
-                        Call
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </main>
       </div>
     </div>

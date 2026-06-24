@@ -148,132 +148,134 @@ export default function ApplicationDetailPage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto p-6">
+          <div className="mx-auto" style={{ maxWidth: 1100 }}>
 
-          {/* Header */}
-          <button
-            onClick={() => navigate("/applications")}
-            className="flex items-center gap-1 text-sm font-semibold mb-4"
-            style={{ color: "#6B5E52" }}
-          >
-            ‹ Back to my applications
-          </button>
-
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-black" style={{ color: "#3D2B1F" }}>
-                Application for {application.petName}
-              </h1>
-              <StatusBadge status={application.status} />
-            </div>
+            {/* Header */}
             <button
-              onClick={() => navigate(`/messages?with=${application.ownerId}&pet=${encodeURIComponent(application.petName)}`)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white"
-              style={{ backgroundColor: "#F5A623" }}
+              onClick={() => navigate("/applications")}
+              className="flex items-center gap-1 text-sm font-semibold mb-4"
+              style={{ color: "#6B5E52" }}
             >
-              💬 Chat owner
+              ‹ Back to my applications
             </button>
-          </div>
 
-          <p className="text-sm mb-6" style={{ color: "#9B8778" }}>
-            {shelterName} · Submitted {timeAgo(application.createdAt)}
-          </p>
-
-          <div className="flex gap-6">
-            {/* Left column */}
-            <div className="flex flex-col gap-4" style={{ width: 360 }}>
-
-              {/* Pet photo */}
-              <div
-                className="rounded-2xl overflow-hidden flex items-center justify-center"
-                style={{
-                  height: 320,
-                  backgroundColor: bg,
-                  backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.18) 10px, rgba(255,255,255,0.18) 20px)",
-                }}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-black" style={{ color: "#3D2B1F" }}>
+                  Application for {application.petName}
+                </h1>
+                <StatusBadge status={application.status} />
+              </div>
+              <button
+                onClick={() => navigate(`/messages?with=${application.ownerId}&pet=${encodeURIComponent(application.petName)}`)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white"
+                style={{ backgroundColor: "#F5A623" }}
               >
-                {photo
-                  ? <img src={photo} alt={application.petName} className="w-full h-full object-cover" />
-                  : <span style={{ fontSize: 90 }}>{emoji}</span>
-                }
-              </div>
-
-              {/* Pet info card */}
-              <div className="rounded-2xl p-5" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
-                <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-xl font-black" style={{ color: "#3D2B1F" }}>{pet?.name ?? application.petName}</h2>
-                  <span style={{ color: "#9B8778" }}>{pet?.gender === "female" ? "♀" : "♂"}</span>
-                </div>
-                <p className="text-sm mb-1" style={{ color: "#9B8778" }}>
-                  {pet?.breed} · {age}
-                </p>
-                {area && (
-                  <p className="text-sm flex items-center gap-1 mb-4" style={{ color: "#9B8778" }}>
-                    📍 {area}
-                  </p>
-                )}
-                <button
-                  onClick={() => navigate(`/pet/${application.petId}`)}
-                  className="w-full py-2.5 rounded-xl text-sm font-bold transition"
-                  style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}
-                >
-                  View full pet profile
-                </button>
-              </div>
-
-              {/* AI score card */}
-              <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
-                <p className="font-black mb-4 text-left" style={{ color: "#3D2B1F" }}>Your AI suitability score</p>
-                <ScoreRing score={application.aiScore ?? 0} />
-              </div>
-
-              {/* Status note */}
-              <div className="rounded-2xl p-4" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
-                <p className="text-sm leading-relaxed" style={{ color: "#6B5E52" }}>
-                  {application.status === "pending"
-                    ? `${shelterName} is reviewing your application. You can message them with any questions.`
-                    : application.status === "approved"
-                    ? `Congratulations! ${shelterName} has approved your application.`
-                    : `${shelterName} has reviewed your application and decided not to proceed.`
-                  }
-                </p>
-              </div>
+                💬 Chat owner
+              </button>
             </div>
 
-            {/* Right column — screening answers */}
-            <div className="flex-1 min-w-0">
-              <div className="rounded-2xl p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-black text-lg" style={{ color: "#3D2B1F" }}>Your screening answers</h3>
-                  <span className="text-sm" style={{ color: "#9B8778" }}>{questions.length} questions</span>
+            <p className="text-sm mb-6" style={{ color: "#9B8778" }}>
+              {shelterName} · Submitted {timeAgo(application.createdAt)}
+            </p>
+
+            <div className="flex gap-6">
+              {/* Left column */}
+              <div className="flex flex-col gap-4" style={{ width: 360 }}>
+
+                {/* Pet photo */}
+                <div
+                  className="rounded-2xl overflow-hidden flex items-center justify-center"
+                  style={{
+                    height: 320,
+                    backgroundColor: bg,
+                    backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.18) 10px, rgba(255,255,255,0.18) 20px)",
+                  }}
+                >
+                  {photo
+                    ? <img src={photo} alt={application.petName} className="w-full h-full object-cover" />
+                    : <span style={{ fontSize: 90 }}>{emoji}</span>
+                  }
                 </div>
-                <p className="text-xs mb-6" style={{ color: "#9B8778" }}>
-                  These are the answers the owner sees when reviewing your application.
-                </p>
 
-                <div className="space-y-4">
-                  {questions.map((qa, i) => (
-                    <div key={i}>
-                      {/* Question */}
-                      <div className="flex items-start gap-3 mb-2">
-                        <span
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 mt-0.5"
-                          style={{ backgroundColor: "#FFF3E0", color: "#F5A623" }}
+                {/* Pet info card */}
+                <div className="rounded-2xl p-5" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="text-xl font-black" style={{ color: "#3D2B1F" }}>{pet?.name ?? application.petName}</h2>
+                    <span style={{ color: "#9B8778" }}>{pet?.gender === "female" ? "♀" : "♂"}</span>
+                  </div>
+                  <p className="text-sm mb-1" style={{ color: "#9B8778" }}>
+                    {pet?.breed} · {age}
+                  </p>
+                  {area && (
+                    <p className="text-sm flex items-center gap-1 mb-4" style={{ color: "#9B8778" }}>
+                      📍 {area}
+                    </p>
+                  )}
+                  <button
+                    onClick={() => navigate(`/pet/${application.petId}`)}
+                    className="w-full py-2.5 rounded-xl text-sm font-bold transition"
+                    style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}
+                  >
+                    View full pet profile
+                  </button>
+                </div>
+
+                {/* AI score card */}
+                <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+                  <p className="font-black mb-4 text-left" style={{ color: "#3D2B1F" }}>Your AI suitability score</p>
+                  <ScoreRing score={application.aiScore ?? 0} />
+                </div>
+
+                {/* Status note */}
+                <div className="rounded-2xl p-4" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+                  <p className="text-sm leading-relaxed" style={{ color: "#6B5E52" }}>
+                    {application.status === "pending"
+                      ? `${shelterName} is reviewing your application. You can message them with any questions.`
+                      : application.status === "approved"
+                      ? `Congratulations! ${shelterName} has approved your application.`
+                      : `${shelterName} has reviewed your application and decided not to proceed.`
+                    }
+                  </p>
+                </div>
+              </div>
+
+              {/* Right column — screening answers */}
+              <div className="flex-1 min-w-0">
+                <div className="rounded-2xl p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-black text-lg" style={{ color: "#3D2B1F" }}>Your screening answers</h3>
+                    <span className="text-sm" style={{ color: "#9B8778" }}>{questions.length} questions</span>
+                  </div>
+                  <p className="text-xs mb-6" style={{ color: "#9B8778" }}>
+                    These are the answers the owner sees when reviewing your application.
+                  </p>
+
+                  <div className="space-y-4">
+                    {questions.map((qa, i) => (
+                      <div key={i}>
+                        {/* Question */}
+                        <div className="flex items-start gap-3 mb-2">
+                          <span
+                            className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 mt-0.5"
+                            style={{ backgroundColor: "#FFF3E0", color: "#F5A623" }}
+                          >
+                            {i + 1}
+                          </span>
+                          <p className="font-black text-sm" style={{ color: "#3D2B1F" }}>{qa.question}</p>
+                        </div>
+
+                        {/* Answer */}
+                        <div
+                          className="ml-9 flex items-center gap-2 px-4 py-3 rounded-xl"
+                          style={{ backgroundColor: "#FFF8F0", border: "1px solid #F5E6CC" }}
                         >
-                          {i + 1}
-                        </span>
-                        <p className="font-black text-sm" style={{ color: "#3D2B1F" }}>{qa.question}</p>
+                          <span className="text-sm" style={{ color: "#F5A623" }}>✓</span>
+                          <p className="text-sm font-semibold" style={{ color: "#6B5E52" }}>{qa.answer}</p>
+                        </div>
                       </div>
-
-                      {/* Answer */}
-                      <div
-                        className="ml-9 flex items-center gap-2 px-4 py-3 rounded-xl"
-                        style={{ backgroundColor: "#FFF8F0", border: "1px solid #F5E6CC" }}
-                      >
-                        <span className="text-sm" style={{ color: "#F5A623" }}>✓</span>
-                        <p className="text-sm font-semibold" style={{ color: "#6B5E52" }}>{qa.answer}</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
