@@ -1,6 +1,4 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { signOut } from "firebase/auth";
-import { auth } from "../firebase/firebase";
 
 const NAV = [
   { icon: "🏠", label: "Dashboard", path: "/shelter/dashboard" },
@@ -8,18 +6,13 @@ const NAV = [
   { icon: "📋", label: "Applications", path: "/shelter/applications" },
   { icon: "⚠️", label: "Stray Reports", path: "/shelter/stray-reports" },
   { icon: "🔍", label: "Lost Pets", path: "/shelter/lost-pets" },
-  { icon: "🏥", label: "Vet Near Me", path: "/shelter/vet-near-me" },
+  { icon: "🩺", label: "Vet Near Me", path: "/shelter/vet-near-me" },
   { icon: "💬", label: "Messages", path: "/shelter/messages" },
 ];
 
 export default function ShelterSidebar({ orgName }) {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    navigate("/");
-  };
 
   return (
     <aside
@@ -75,7 +68,7 @@ export default function ShelterSidebar({ orgName }) {
           <span>🏢</span> Shelter Profile
         </button>
         <button
-          onClick={handleLogout}
+          onClick={() => navigate("/shelter/settings")}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold mb-4 transition hover:bg-gray-50"
           style={{ color: "#6B5C52" }}
         >
