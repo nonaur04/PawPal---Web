@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 // Auth
 import LoginPage from "./auth-pages/LoginPage";
 import SignUpPage from "./auth-pages/SignUpPage";
+import OnboardingPage from "./auth-pages/OnboardingPage";
 
 // Normal User
 import HomePage from "./user-pages/HomePage";
@@ -55,6 +56,7 @@ function App() {
       // Auth
       <Route path="/" element={<LoginPage />} />
       <Route path="/register" element={<SignUpPage />} />
+      <Route path="/onboarding" element={<OnboardingPage />} />
 
       // Normal User
       <Route path="/home" element={<HomePage />} />

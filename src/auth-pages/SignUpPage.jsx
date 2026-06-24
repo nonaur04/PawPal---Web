@@ -54,7 +54,7 @@ export default function SignUpPage() {
           role: "petlover",
           createdAt: serverTimestamp(),
         });
-        navigate("/home");
+        navigate("/onboarding");
       } catch (err) {
         switch (err.code) {
           case "auth/email-already-in-use":
