@@ -19,10 +19,6 @@ export default function TopBar() {
       >
         <span>+</span> Post a pet
       </button>
-      <button className="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#F5F2EE", border: "1px solid #EEE8E0" }}>
-        <span>🔔</span>
-        <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ backgroundColor: "#F5A623" }}></span>
-      </button>
     </div>
   );
 }
