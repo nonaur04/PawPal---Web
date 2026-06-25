@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { doc, updateDoc } from "firebase/firestore";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebase/firebase";
 import BrandingPanel from "../components/BrandingPanel";
 import {
@@ -106,29 +106,88 @@ function BreedChip({ label, selected, onClick }) {
   );
 }
 
-function SelectField({ value, onChange, options, placeholder }) {
+function SelectField({ value, onChange, options, placeholder, align = "left" }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  // Normalize options to { value, label }
+  const normalized = options.map((opt) =>
+    typeof opt === "string" ? { value: opt, label: opt } : opt
+  );
+  const selectedLabel = normalized.find((o) => o.value === value)?.label;
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
-    <select
-      value={value}
-      onChange={onChange}
-      className="w-full rounded-xl px-4 py-3.5 text-sm font-medium outline-none appearance-none"
-      style={{ backgroundColor: FIELD_BG, color: value ? DARK : "#B0A696" }}
-    >
-      <option value="" disabled hidden style={{ backgroundColor: "white", color: "#B0A696" }}>
-        {placeholder}
-      </option>
-      {options.map((opt) =>
-        typeof opt === "string" ? (
-          <option key={opt} value={opt} style={{ backgroundColor: "white", color: "#1a1a1a" }}>
-            {opt}
-          </option>
-        ) : (
-          <option key={opt.value} value={opt.value} style={{ backgroundColor: "white", color: "#1a1a1a" }}>
-            {opt.label}
-          </option>
-        )
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`w-full rounded-xl px-4 py-3.5 text-sm font-medium outline-none flex items-center justify-between gap-2 ${
+          align === "center" ? "text-center justify-center" : ""
+        }`}
+        style={{ backgroundColor: FIELD_BG, color: value ? DARK : "#B0A696" }}
+      >
+        <span className="truncate">{selectedLabel || placeholder}</span>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          className="flex-shrink-0 transition-transform"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          className="absolute left-0 right-0 mt-1.5 rounded-xl border z-20 overflow-y-auto"
+          style={{
+            backgroundColor: "white",
+            borderColor: "#E5E0D8",
+            maxHeight: "260px", // roughly 7-8 rows, then scrolls
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+          }}
+        >
+          {normalized.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                onChange({ target: { value: opt.value } });
+                setOpen(false);
+              }}
+              className="w-full text-left px-4 py-3 text-sm transition"
+              style={{
+                color: opt.value === value ? ORANGE : "#1a1a1a",
+                fontWeight: opt.value === value ? 700 : 500,
+                backgroundColor: opt.value === value ? "#FFF8EE" : "white",
+              }}
+              onMouseEnter={(e) => {
+                if (opt.value !== value) e.currentTarget.style.backgroundColor = "#F7F5F1";
+              }}
+              onMouseLeave={(e) => {
+                if (opt.value !== value) e.currentTarget.style.backgroundColor = "white";
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       )}
-    </select>
+    </div>
   );
 }
 
@@ -275,34 +334,26 @@ function ProfileStep({ data, setData, onNext, onSkip }) {
             Date of Birth
           </label>
           <div className="grid grid-cols-3 gap-3">
-            <select
+            <SelectField
               value={data.dobDay}
               onChange={(e) => setData((d) => ({ ...d, dobDay: e.target.value }))}
-              className="w-full rounded-xl px-3 py-3.5 text-sm font-medium outline-none appearance-none text-center"
-              style={{ backgroundColor: FIELD_BG, color: data.dobDay ? DARK : "#B0A696" }}
-            >
-              <option value="" disabled hidden style={{ backgroundColor: "white", color: "#B0A696" }}>Day</option>
-              {DAYS.map((d) => (
-                <option key={d} value={d} style={{ backgroundColor: "white", color: "#1a1a1a" }}>{d}</option>
-              ))}
-            </select>
+              options={DAYS}
+              placeholder="Day"
+              align="center"
+            />
             <SelectField
               value={data.dobMonth}
               onChange={(e) => setData((d) => ({ ...d, dobMonth: e.target.value }))}
               options={MONTHS}
               placeholder="Month"
             />
-            <select
+            <SelectField
               value={data.dobYear}
               onChange={(e) => setData((d) => ({ ...d, dobYear: e.target.value }))}
-              className="w-full rounded-xl px-3 py-3.5 text-sm font-medium outline-none appearance-none text-center"
-              style={{ backgroundColor: FIELD_BG, color: data.dobYear ? DARK : "#B0A696" }}
-            >
-              <option value="" disabled hidden style={{ backgroundColor: "white", color: "#B0A696" }}>Year</option>
-              {YEARS.map((y) => (
-                <option key={y} value={y} style={{ backgroundColor: "white", color: "#1a1a1a" }}>{y}</option>
-              ))}
-            </select>
+              options={YEARS}
+              placeholder="Year"
+              align="center"
+            />
           </div>
         </div>
       </div>
@@ -323,7 +374,7 @@ function ProfileStep({ data, setData, onNext, onSkip }) {
 
 // ---------- Step 2: Pet Preference ----------
 
-function PetPreferenceStep({ data, setData, onNext, onBack }) {
+function PetPreferenceStep({ data, setData, onNext, onBack, totalSteps, currentStep }) {
   const togglePetType = (key) => {
     setData((d) => {
       let types = d.petTypes.includes(key)
@@ -343,7 +394,7 @@ function PetPreferenceStep({ data, setData, onNext, onBack }) {
   return (
     <div>
       <BackArrow onClick={onBack} />
-      <ProgressDots total={2} current={1} />
+      <ProgressDots total={totalSteps} current={currentStep} />
       <h1
         className="text-3xl font-black mb-2"
         style={{ color: DARK, fontFamily: "'Nunito', sans-serif" }}
@@ -454,10 +505,13 @@ function BreedPreferenceStep({ petType, totalSteps, currentStep, selected, onTog
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preferenceOnly = searchParams.get("step") === "preference";
 
   // "profile" -> "pet_preference" -> "breed:<type>" (one per selected type, in order) -> done
-  const [stepIndex, setStepIndex] = useState(0);
+  const [stepIndex, setStepIndex] = useState(preferenceOnly ? 1 : 0);
   const [saving, setSaving] = useState(false);
+  const [initializing, setInitializing] = useState(preferenceOnly);
 
   const [data, setData] = useState({
     photoFile: null,
@@ -474,42 +528,86 @@ export default function OnboardingPage() {
     breedPreferences: {}, // { dogs: [...], cats: [...] }
   });
 
+  // When entering in "edit preferences" mode, preload existing saved preferences
+  // so the user starts from what they already picked, not from blank.
+  useEffect(() => {
+    if (!preferenceOnly) return;
+    const loadExisting = async () => {
+      try {
+        const uid = auth.currentUser?.uid;
+        if (uid) {
+          const snap = await getDoc(doc(db, "users", uid));
+          if (snap.exists()) {
+            const d = snap.data();
+            setData((prev) => ({
+              ...prev,
+              petTypes: d.petTypePreferences || [],
+              specialNeeds: d.specialNeedsPreference || "",
+              breedPreferences: d.breedPreferences || {},
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load existing preferences:", err);
+      } finally {
+        setInitializing(false);
+      }
+    };
+    loadExisting();
+  }, [preferenceOnly]);
+
   // Build the ordered list of breed steps based on selected pet types (selection order preserved)
   const breedSteps = data.petTypes.filter((t) => BREED_STEP_TYPES.includes(t));
 
-  // step 0 = profile, step 1 = pet preference, step 2..n = breed steps
-  const TOTAL_STEPS = 2 + breedSteps.length;
+  // Total steps shown in progress dots: profile + pet preference + breed steps (skip profile if preferenceOnly)
+  const TOTAL_STEPS = (preferenceOnly ? 1 : 2) + breedSteps.length;
 
   const finishOnboarding = async (finalData) => {
     setSaving(true);
     try {
       const uid = auth.currentUser?.uid;
       if (uid) {
-        await updateDoc(doc(db, "users", uid), {
-          phone: finalData.phone || null,
-          gender: finalData.gender || null,
-          state: finalData.state || null,
-          city: finalData.city || null,
-          dateOfBirth:
-            finalData.dobDay && finalData.dobMonth && finalData.dobYear
-              ? `${finalData.dobYear}-${finalData.dobMonth}-${finalData.dobDay}`
-              : null,
-          petTypePreferences: finalData.petTypes,
-          specialNeedsPreference: finalData.specialNeeds || null,
-          breedPreferences: finalData.breedPreferences,
-          onboardingCompleted: true,
-        });
+        const updatePayload = preferenceOnly
+          ? {
+              // Editing preferences only — don't touch profile fields (phone/gender/location/DOB)
+              petTypePreferences: finalData.petTypes,
+              specialNeedsPreference: finalData.specialNeeds || null,
+              breedPreferences: finalData.breedPreferences,
+            }
+          : {
+              phone: finalData.phone || null,
+              gender: finalData.gender || null,
+              state: finalData.state || null,
+              city: finalData.city || null,
+              dateOfBirth:
+                finalData.dobDay && finalData.dobMonth && finalData.dobYear
+                  ? `${finalData.dobYear}-${finalData.dobMonth}-${finalData.dobDay}`
+                  : null,
+              petTypePreferences: finalData.petTypes,
+              specialNeedsPreference: finalData.specialNeeds || null,
+              breedPreferences: finalData.breedPreferences,
+              onboardingCompleted: true,
+            };
+        await updateDoc(doc(db, "users", uid), updatePayload);
       }
     } catch (err) {
       console.error("Failed to save onboarding data:", err);
     } finally {
       setSaving(false);
-      navigate("/home");
+      navigate(preferenceOnly ? "/settings" : "/home");
     }
   };
 
-  // ---- Step 0: Profile ----
-  if (stepIndex === 0) {
+  if (initializing) {
+    return (
+      <PageShell>
+        <p style={{ color: DARK }}>Loading your preferences...</p>
+      </PageShell>
+    );
+  }
+
+  // ---- Step 0: Profile (skipped entirely in preferenceOnly mode) ----
+  if (!preferenceOnly && stepIndex === 0) {
     return (
       <PageShell>
         <ProfileStep
@@ -529,7 +627,9 @@ export default function OnboardingPage() {
         <PetPreferenceStep
           data={data}
           setData={setData}
-          onBack={() => setStepIndex(0)}
+          totalSteps={TOTAL_STEPS}
+          currentStep={preferenceOnly ? 0 : 1}
+          onBack={preferenceOnly ? () => navigate("/settings") : () => setStepIndex(0)}
           onNext={() => {
             if (breedSteps.length === 0) {
               finishOnboarding(data);
@@ -597,7 +697,7 @@ export default function OnboardingPage() {
         <BreedPreferenceStep
           petType={currentPetType}
           totalSteps={TOTAL_STEPS}
-          currentStep={stepIndex}
+          currentStep={preferenceOnly ? stepIndex - 1 : stepIndex}
           selected={selected}
           onToggleBreed={toggleBreed}
           onNoPreference={setNoPreference}

@@ -9,6 +9,16 @@ import TopBar from "../components/TopBar";
 const SPECIES_BG = { dog: "#F9BFBF", cat: "#F9BFBF", rabbit: "#F2C4A0", bird: "#C4E0F2", others: "#D4F2C4" };
 const SPECIES_EMOJI = { dog: "🐕", cat: "🐱", rabbit: "🐇", bird: "🦜", others: "🐾" };
 
+const PET_TYPE_LABEL = {
+  dogs: "Dogs", cats: "Cats", rabbits: "Rabbits", birds: "Birds", others: "Others", any: "Any",
+};
+
+const SPECIAL_NEEDS_LABEL = {
+  yes: "Yes, I'm okay with it",
+  no: "No",
+  doesnt_matter: "Doesn't matter",
+};
+
 function timeAgo(ts) {
   if (!ts) return "";
   const date = ts.toDate ? ts.toDate() : new Date(ts);
@@ -25,6 +35,31 @@ function formatAge(years, months) {
   return `${months} mo${months !== 1 ? "s" : ""}`;
 }
 
+function formatDOB(dateOfBirth) {
+  if (!dateOfBirth) return null;
+  const [year, month, day] = dateOfBirth.split("-");
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const monthIndex = parseInt(month, 10) - 1;
+  if (monthIndex < 0 || monthIndex > 11) return dateOfBirth;
+  return `${parseInt(day, 10)} ${months[monthIndex]} ${year}`;
+}
+
+function formatBreedSummary(breedPreferences, petTypePreferences) {
+  if (!petTypePreferences || petTypePreferences.length === 0 || petTypePreferences.includes("any")) {
+    return "Any";
+  }
+  const parts = petTypePreferences
+    .filter((t) => t !== "any")
+    .map((type) => {
+      const breeds = breedPreferences?.[type];
+      if (!breeds || breeds.length === 0) return null;
+      const label = PET_TYPE_LABEL[type] || type;
+      return `${label}: ${breeds.join(", ")}`;
+    })
+    .filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : "Any";
+}
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -34,7 +69,6 @@ export default function ProfilePage() {
   const [stats, setStats] = useState({ applications: 0, favorites: 0, reports: 0, listings: 0 });
   const [favoritePets, setFavoritePets] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
-  const [preferences, setPreferences] = useState({});
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -47,7 +81,6 @@ export default function ProfilePage() {
         const profileDoc = await getDoc(doc(db, "users", u.uid));
         const profileData = profileDoc.exists() ? profileDoc.data() : {};
         setProfile(profileData);
-        setPreferences(profileData.preferences || {});
 
         // Applications count
         const appsSnap = await getDocs(collection(db, "applications"));
@@ -106,9 +139,18 @@ export default function ProfilePage() {
     return () => unsub();
   }, []);
 
-  const displayName = profile?.name || profile?.displayName || userName || "User";
+  const displayName = profile?.name || profile?.fullName || profile?.displayName || userName || "User";
   const role = profile?.role === "shelter" ? "Shelter" : "Pet Adopter";
-  const location = preferences?.location || profile?.location || "Melaka, Malaysia";
+  const location = profile?.city && profile?.state
+    ? `${profile.city}, ${profile.state}`
+    : profile?.state || "Melaka, Malaysia";
+  const dobFormatted = formatDOB(profile?.dateOfBirth);
+  const petTypePreferences = profile?.petTypePreferences || [];
+  const breedPreferences = profile?.breedPreferences || {};
+
+  const lookingForLabel = petTypePreferences.length === 0 || petTypePreferences.includes("any")
+    ? "Any"
+    : petTypePreferences.map((t) => PET_TYPE_LABEL[t] || t).join(", ");
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "#F5F2EE", fontFamily: "'Nunito', sans-serif" }}>
@@ -142,7 +184,10 @@ export default function ProfilePage() {
                     </div>
                     <div className="mt-3 mb-4">
                       <h2 className="text-xl font-black" style={{ color: "#3D2B1F" }}>{displayName}</h2>
-                      <p className="text-sm" style={{ color: "#9B8778" }}>{role} · {location}</p>
+                      <p className="text-sm" style={{ color: "#9B8778" }}>
+                        {role} · 📍 {location}
+                        {dobFormatted && <> · 🎂 {dobFormatted}</>}
+                      </p>
                     </div>
                     {/* Stats */}
                     <div className="flex gap-8">
@@ -212,17 +257,23 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-2 gap-8">
                   {/* Preferences */}
                   <div className="rounded-2xl p-5" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
-                    <h3 className="font-black text-base mb-4" style={{ color: "#3D2B1F" }}>Preferences</h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-black text-base" style={{ color: "#3D2B1F" }}>Preferences</h3>
+                      <button onClick={() => navigate("/onboarding?step=preference")} className="text-xs font-bold" style={{ color: "#F5A623" }}>
+                        Edit →
+                      </button>
+                    </div>
                     <div className="space-y-3">
                       {[
-                        { label: "Looking for", value: preferences?.species || preferences?.petType || "Cats" },
-                        { label: "Breeds", value: preferences?.breeds?.join(", ") || preferences?.breed || "Any" },
+                        { label: "Looking for", value: lookingForLabel },
+                        { label: "Breeds", value: formatBreedSummary(breedPreferences, petTypePreferences) },
+                        { label: "Special needs OK?", value: SPECIAL_NEEDS_LABEL[profile?.specialNeedsPreference] || "Doesn't matter" },
                         { label: "Location", value: location },
                       ].map((p) => (
-                        <div key={p.label} className="flex items-center justify-between py-2"
+                        <div key={p.label} className="flex items-start justify-between gap-3 py-2"
                           style={{ borderBottom: "1px solid #F5F2EE" }}>
-                          <p className="text-sm" style={{ color: "#9B8778" }}>{p.label}</p>
-                          <p className="text-sm font-bold" style={{ color: "#3D2B1F" }}>{p.value}</p>
+                          <p className="text-sm shrink-0" style={{ color: "#9B8778" }}>{p.label}</p>
+                          <p className="text-sm font-bold text-right" style={{ color: "#3D2B1F" }}>{p.value}</p>
                         </div>
                       ))}
                     </div>

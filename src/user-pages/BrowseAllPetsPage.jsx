@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { db, auth } from "../firebase/firebase";
 import Sidebar from "../components/Sidebar";
@@ -24,6 +24,23 @@ const SPECIES_EMOJI = {
   dog: "🐕", cat: "🐱", rabbit: "🐇", bird: "🦜", others: "🐾",
 };
 
+// Maps onboarding pet-type keys (plural) -> pet doc species value (singular)
+const PET_TYPE_TO_SPECIES = {
+  dogs: "dog",
+  cats: "cat",
+  rabbits: "rabbit",
+  birds: "bird",
+  others: "others",
+};
+
+const SPECIES_LABEL = {
+  dog: "Dogs",
+  cat: "Cats",
+  rabbit: "Rabbits",
+  bird: "Birds",
+  others: "Other pets",
+};
+
 function formatAge(years, months) {
   if (years > 0) return `${years} yr${years > 1 ? "s" : ""}`;
   return `${months} mo${months !== 1 ? "s" : ""}`;
@@ -45,7 +62,7 @@ const PAGE_CONFIG = {
   },
   preference: {
     title: "Based on Your Preference",
-    subtitle: "Cats that match your saved preferences",
+    subtitle: "Pets that match your saved preferences",
   },
   default: {
     title: "Browse all pets",
@@ -65,10 +82,24 @@ export default function BrowseAllPetsPage() {
   const [userLocation, setUserLocation] = useState(null);
   const [userName, setUserName] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
+  const [preferences, setPreferences] = useState({
+    petTypePreferences: [],
+    breedPreferences: {},
+  });
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (u) setUserName(u.displayName || "");
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      if (u) {
+        setUserName(u.displayName || "");
+        const userDoc = await getDoc(doc(db, "users", u.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setPreferences({
+            petTypePreferences: data.petTypePreferences || [],
+            breedPreferences: data.breedPreferences || {},
+          });
+        }
+      }
       setCurrentUser(u);
     });
     return () => unsub();
@@ -82,6 +113,14 @@ export default function BrowseAllPetsPage() {
       );
     }
   }, []);
+
+  // Resolve preferred species (singular) and breed prefs once preferences are loaded
+  const { petTypePreferences, breedPreferences } = preferences;
+  const preferredSpecies = (petTypePreferences || [])
+    .filter((t) => t !== "any")
+    .map((t) => PET_TYPE_TO_SPECIES[t])
+    .filter(Boolean);
+  const wantsAny = !petTypePreferences?.length || petTypePreferences.includes("any");
 
   useEffect(() => {
     const fetchPets = async () => {
@@ -111,7 +150,32 @@ export default function BrowseAllPetsPage() {
               return a.distanceKm - b.distanceKm;
             });
         } else if (browseType === "preference") {
-          pets = pets.filter((p) => p.species?.toLowerCase() === "cat");
+          if (wantsAny) {
+            // No specific preference saved (or chose "Any") — show everything
+            pets = pets.sort((a, b) => {
+              if (a.distanceKm == null) return 1;
+              if (b.distanceKm == null) return -1;
+              return a.distanceKm - b.distanceKm;
+            });
+          } else {
+            pets = pets.filter((p) => {
+              const species = p.species?.toLowerCase();
+              if (!preferredSpecies.includes(species)) return false;
+
+              const typeKey = Object.keys(PET_TYPE_TO_SPECIES).find(
+                (key) => PET_TYPE_TO_SPECIES[key] === species
+              );
+              const breedPrefs = breedPreferences?.[typeKey];
+
+              // No breed preference saved, or "Any"/"Mixed" picked -> show all breeds for this species
+              if (!breedPrefs || breedPrefs.length === 0) return true;
+              if (breedPrefs.includes("Any") || breedPrefs.includes("Mixed")) return true;
+
+              return breedPrefs.some(
+                (b) => b.toLowerCase() === (p.breed || "").toLowerCase()
+              );
+            });
+          }
         } else {
           pets = pets.sort((a, b) => {
             if (a.distanceKm == null) return 1;
@@ -128,9 +192,17 @@ export default function BrowseAllPetsPage() {
       }
     };
     fetchPets();
-  }, [userLocation, browseType, currentUser]);
+  }, [userLocation, browseType, currentUser, petTypePreferences, breedPreferences]);
 
-  const config = PAGE_CONFIG[browseType] ?? PAGE_CONFIG.default;
+  // Build page config, with dynamic subtitle for preference type
+  const baseConfig = PAGE_CONFIG[browseType] ?? PAGE_CONFIG.default;
+  let config = baseConfig;
+  if (browseType === "preference") {
+    const subtitle = wantsAny
+      ? "A mix of pets you might like"
+      : `${preferredSpecies.map((s) => SPECIES_LABEL[s] || s).join(" & ")} that match your saved preferences`;
+    config = { ...baseConfig, subtitle };
+  }
 
   // Count per species from current pets list
   const counts = SPECIES_TABS.reduce((acc, tab) => {
@@ -173,6 +245,9 @@ export default function BrowseAllPetsPage() {
     emoji: SPECIES_EMOJI[p.species?.toLowerCase()] ?? "🐾",
   });
 
+  // Species tabs only make sense to show if there's more than one species in the preference set
+  const showSpeciesTabs = browseType !== "preference" || preferredSpecies.length > 1 || wantsAny;
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "#F5F2EE", fontFamily: "'Nunito', sans-serif" }}>
       <Sidebar userName={userName} />
@@ -206,8 +281,8 @@ export default function BrowseAllPetsPage() {
               </div>
             </div>
 
-            {/* Species tabs — hidden for preference type since it's already filtered to cats */}
-            {browseType !== "preference" && (
+            {/* Species tabs — hidden for preference type when only one species matches */}
+            {showSpeciesTabs && (
               <div className="flex gap-2 flex-wrap mb-4 mt-4">
                 {SPECIES_TABS.map((tab) => {
                   const isActive = activeSpecies === tab.label;
