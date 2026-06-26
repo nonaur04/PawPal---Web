@@ -24,12 +24,6 @@ export default function PetCard({ pet }) {
         ) : (
           <span style={{ fontSize: 64 }}>{pet.emoji}</span>
         )}
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-sm"
-        >
-          🤍
-        </button>
         {pet.vaccinated && (
           <span className="absolute bottom-3 left-3 text-xs font-bold px-2 py-1 rounded-full" style={{ backgroundColor: "#22C55E", color: "white" }}>
             Vaccinated

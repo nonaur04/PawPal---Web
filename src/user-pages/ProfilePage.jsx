@@ -206,53 +206,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Favorite pets */}
-                <div className="rounded-2xl p-5" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-black text-base flex items-center gap-2" style={{ color: "#3D2B1F" }}>
-                      🤍 Favorite pets
-                    </h3>
-                    <button onClick={() => navigate("/home")} className="text-sm font-bold" style={{ color: "#F5A623" }}>
-                      Browse more →
-                    </button>
-                  </div>
-                  {favoritePets.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-6">
-                      <p className="text-3xl mb-2">🤍</p>
-                      <p className="font-black text-sm mb-1" style={{ color: "#3D2B1F" }}>No favourites yet</p>
-                      <p className="text-xs" style={{ color: "#9B8778" }}>Tap the heart on any pet to save them here.</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-4 gap-3">
-                      {favoritePets.map((pet) => {
-                        const bg = SPECIES_BG[pet.species?.toLowerCase()] ?? "#F9BFBF";
-                        const emoji = SPECIES_EMOJI[pet.species?.toLowerCase()] ?? "🐾";
-                        return (
-                          <div key={pet.id} onClick={() => navigate(`/pet/${pet.id}`)}
-                            className="rounded-xl overflow-hidden cursor-pointer hover:shadow-sm transition"
-                            style={{ border: "1px solid #EEE8E0" }}>
-                            <div className="relative flex items-center justify-center"
-                              style={{ height: 100, backgroundColor: bg, backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,255,255,0.18) 8px, rgba(255,255,255,0.18) 16px)" }}>
-                              {pet.photoUrls?.[0]
-                                ? <img src={pet.photoUrls[0]} alt="" className="w-full h-full object-cover" />
-                                : <span style={{ fontSize: 40 }}>{emoji}</span>
-                              }
-                              <span className="absolute top-2 right-2 text-base">🤍</span>
-                            </div>
-                            <div className="p-2.5">
-                              <p className="font-black text-sm" style={{ color: "#3D2B1F" }}>{pet.name}</p>
-                              <p className="text-xs" style={{ color: "#9B8778" }}>{pet.breed} · {formatAge(pet.ageYears, pet.ageMonths)}</p>
-                              <p className="text-xs flex items-center gap-0.5 mt-0.5" style={{ color: "#9B8778" }}>
-                                📍 {pet.address?.split(",")[0]}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
                 {/* Bottom row */}
                 <div className="grid grid-cols-2 gap-8">
                   {/* Preferences */}

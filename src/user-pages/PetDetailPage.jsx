@@ -112,12 +112,6 @@ export default function PetDetailPage() {
                   ) : (
                     <span style={{ fontSize: 100 }}>{emoji}</span>
                   )}
-                  <button
-                    onClick={() => setLiked(!liked)}
-                    className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow text-lg"
-                  >
-                    {liked ? "❤️" : "🤍"}
-                  </button>
                 </div>
 
                 {/* Thumbnails */}

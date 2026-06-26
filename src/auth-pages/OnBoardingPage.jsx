@@ -425,29 +425,6 @@ function PetPreferenceStep({ data, setData, onNext, onBack, totalSteps, currentS
         </div>
       </div>
 
-      <div className="mb-8">
-        <h3 className="font-bold text-base mb-1" style={{ color: DARK }}>
-          Are you okay with special needs pets?
-        </h3>
-        <p className="text-xs mb-4" style={{ color: MUTED }}>
-          e.g. disabled, chronic illness, requires medication
-        </p>
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { key: "yes", label: "Yes 💛" },
-            { key: "no", label: "No" },
-            { key: "doesnt_matter", label: "Doesn't matter" },
-          ].map((o) => (
-            <PillOption
-              key={o.key}
-              label={o.label}
-              selected={data.specialNeeds === o.key}
-              onClick={() => setData((d) => ({ ...d, specialNeeds: o.key }))}
-            />
-          ))}
-        </div>
-      </div>
-
       <PrimaryButton onClick={onNext} disabled={data.petTypes.length === 0}>
         {data.petTypes.some((t) => BREED_STEP_TYPES.includes(t)) ? "Next" : "Let's go! 🐾"}
       </PrimaryButton>

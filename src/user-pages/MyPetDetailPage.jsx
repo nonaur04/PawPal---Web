@@ -116,7 +116,7 @@ export default function MyPetDetailPage() {
               </div>
               <div className="flex gap-3">
                 <button
-                  onClick={() => navigate(`/applications/${id}`)}
+                  onClick={() => navigate(`/review-applicant/${id}`)}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition"
                   style={{ backgroundColor: "white", border: "1.5px solid #EEE8E0", color: "#6B5E52" }}
                 >
@@ -187,7 +187,6 @@ export default function MyPetDetailPage() {
                   <h3 className="font-black mb-4" style={{ color: "#3D2B1F" }}>Engagement</h3>
                   <div className="grid grid-cols-3 gap-3">
                     {[
-                      { icon: "❤️", value: pet.likes ?? 0, label: "Likes" },
                       { icon: "🐾", value: applicantCount, label: "Applicants" },
                       { icon: "👀", value: pet.views ?? 0, label: "Views" },
                     ].map((s) => (
