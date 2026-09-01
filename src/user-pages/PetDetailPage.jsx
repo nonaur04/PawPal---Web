@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase/firebase";
+import { doc, getDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import { db, auth } from "../firebase/firebase";
 import Sidebar from "../components/Sidebar";
 import TopBar from "../components/TopBar";
 
@@ -35,6 +36,8 @@ export default function PetDetailPage() {
   const [activePhoto, setActivePhoto] = useState(0);
   const [liked, setLiked] = useState(false);
   const [userName, setUserName] = useState("there");
+  const [currentUser, setCurrentUser] = useState(null);
+  const [myApplicationId, setMyApplicationId] = useState(null);
 
   useEffect(() => {
     const fetchPet = async () => {
@@ -56,6 +59,35 @@ export default function PetDetailPage() {
     };
     fetchPet();
   }, [id]);
+
+  // Track the logged-in user
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setCurrentUser(u);
+      if (u) setUserName(u.displayName || "there");
+    });
+    return () => unsub();
+  }, []);
+
+  // Check whether this user already applied to adopt this pet
+  useEffect(() => {
+    if (!currentUser) return;
+    const checkApplication = async () => {
+      try {
+        const snap = await getDocs(
+          query(collection(db, "applications"), where("petId", "==", id))
+        );
+        const mine = snap.docs.find((d) => {
+          const data = d.data();
+          return data.applicantId === currentUser.uid || data.userId === currentUser.uid;
+        });
+        setMyApplicationId(mine ? mine.id : null);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    checkApplication();
+  }, [id, currentUser]);
 
   if (loading) {
     return (
@@ -260,13 +292,23 @@ export default function PetDetailPage() {
                 )}
 
                 <div className="flex gap-3">
-                  <button
-                    onClick={() => navigate(`/adopt-intro/${pet.id}/${encodeURIComponent(pet.name)}`)}
-                    className="w-full py-3.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition"
-                    style={{ backgroundColor: "#F5A623" }}
-                  >
-                    🤍 Apply to adopt {pet.name}
-                  </button>
+                  {myApplicationId ? (
+                    <button
+                      onClick={() => navigate(`/application/${myApplicationId}`)}
+                      className="w-full py-3.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition"
+                      style={{ backgroundColor: "#F5A623" }}
+                    >
+                      📋 View application
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => navigate(`/adopt-intro/${pet.id}/${encodeURIComponent(pet.name)}`)}
+                      className="w-full py-3.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition"
+                      style={{ backgroundColor: "#F5A623" }}
+                    >
+                      🤍 Apply to adopt {pet.name}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

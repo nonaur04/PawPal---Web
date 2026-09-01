@@ -156,10 +156,15 @@ export default function HomePage() {
     fetchPets();
   }, [user, userLocation]);
 
-  // Filter by species (top filter bar)
+  // Filter by species (top filter bar).
+  // Map the active tab label (e.g. "Others") to the pet doc species value via PET_TYPE_TO_SPECIES
+  // so "Others" resolves to "others" instead of being wrongly stripped to "other".
+  const activeSpeciesValue =
+    activeSpecies === "All" ? null : PET_TYPE_TO_SPECIES[activeSpecies.toLowerCase()];
+
   const filtered = activeSpecies === "All"
     ? allPets
-    : allPets.filter((p) => p.species?.toLowerCase() === activeSpecies.toLowerCase().replace(/s$/, ""));
+    : allPets.filter((p) => p.species?.toLowerCase() === activeSpeciesValue);
 
   // Nearby = within 30km (or all if no location)
   const nearby = filtered.filter((p) => p.distanceKm == null || p.distanceKm <= 30).slice(0, 8);
@@ -175,15 +180,15 @@ export default function HomePage() {
 
   const wantsAny = !petTypePreferences?.length || petTypePreferences.includes("any");
 
-  let preference = [];
+  let preferencePool = [];
   let preferenceSubtitle = "Pets that match your saved preferences";
 
   if (wantsAny) {
     // No specific preference saved (or chose "Any") — fall back to showing a general mix
-    preference = allPets.slice(0, 8);
+    preferencePool = allPets;
     preferenceSubtitle = "A mix of pets you might like";
   } else {
-    preference = allPets.filter((p) => {
+    preferencePool = allPets.filter((p) => {
       const species = p.species?.toLowerCase();
       if (!preferredSpecies.includes(species)) return false;
 
@@ -201,11 +206,18 @@ export default function HomePage() {
       return breedPrefs.some(
         (b) => b.toLowerCase() === (p.breed || "").toLowerCase()
       );
-    }).slice(0, 8);
+    });
 
     const labels = preferredSpecies.map((s) => SPECIES_LABEL[s] || s).join(" & ");
     preferenceSubtitle = `${labels} that match your saved preferences`;
   }
+
+  // Apply the top species filter bar within the preference list, then cap at 8
+  const preference = (
+    activeSpecies === "All"
+      ? preferencePool
+      : preferencePool.filter((p) => p.species?.toLowerCase() === activeSpeciesValue)
+  ).slice(0, 8);
 
   // Map pet doc to card-ready shape
   const toCardPet = (p) => ({

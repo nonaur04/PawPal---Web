@@ -66,8 +66,7 @@ export default function ProfilePage() {
   const [userName, setUserName] = useState("");
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ applications: 0, favorites: 0, reports: 0, listings: 0 });
-  const [favoritePets, setFavoritePets] = useState([]);
+  const [stats, setStats] = useState({ applications: 0, reports: 0, listings: 0 });
   const [recentActivity, setRecentActivity] = useState([]);
 
   useEffect(() => {
@@ -93,10 +92,6 @@ export default function ProfilePage() {
         const allPets = petsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
         const myListings = allPets.filter((p) => p.ownerId === u.uid);
 
-        // Favorites (from user profile or pets with liked field)
-        const favoriteIds = profileData.favorites || [];
-        const favPets = allPets.filter((p) => favoriteIds.includes(p.id)).slice(0, 4);
-
         // Reports count
         const straySnap = await getDocs(collection(db, "stray_reports"));
         const myStrays = straySnap.docs.filter((d) => {
@@ -112,11 +107,9 @@ export default function ProfilePage() {
 
         setStats({
           applications: myApps.length,
-          favorites: favoriteIds.length,
           reports: totalReports,
           listings: myListings.length,
         });
-        setFavoritePets(favPets);
 
         // Recent activity
         const activity = [];
@@ -193,7 +186,6 @@ export default function ProfilePage() {
                     <div className="flex gap-8">
                       {[
                         { value: stats.applications, label: "Applications" },
-                        { value: stats.favorites, label: "Favorites" },
                         { value: stats.reports, label: "Reports" },
                         { value: stats.listings, label: "Listings" },
                       ].map((s) => (
