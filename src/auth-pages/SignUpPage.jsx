@@ -2,432 +2,449 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "../firebase/firebase";
-import BrandingPanel from "../components/BrandingPanel";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { auth, db, storage } from "../firebase/firebase";
+
+// ── Stepper ──────────────────────────────────────────────────────────────────
+function Stepper({ current }) {
+  const steps = ["Details", "Documents", "Done"];
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 28 }}>
+      {steps.map((label, i) => {
+        const idx = i + 1;
+        const done = idx < current;
+        const active = idx === current;
+        return (
+          <div key={label} style={{ display: "flex", alignItems: "center", flex: i < steps.length - 1 ? 1 : "none" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                backgroundColor: done ? "#F5A623" : active ? "#FFF3E0" : "#F5F2EE",
+                border: active ? "2px solid #F5A623" : done ? "none" : "2px solid #EEE8E0",
+                fontSize: 13, fontWeight: 900,
+                color: done ? "white" : active ? "#F5A623" : "#9B8778",
+              }}>
+                {done ? "✓" : idx}
+              </div>
+              <span style={{ fontSize: 13, fontWeight: active || done ? 900 : 500, color: active ? "#3D2B1F" : done ? "#F5A623" : "#9B8778" }}>
+                {label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div style={{ flex: 1, height: 2, backgroundColor: done ? "#F5A623" : "#EEE8E0", margin: "0 10px" }} />
+            )}
+          </div>
+        );
+      })}
+      <span style={{ fontSize: 12, color: "#9B8778", marginLeft: 12, flexShrink: 0 }}>Step {current} of 3</span>
+    </div>
+  );
+}
+
+// ── Document row ─────────────────────────────────────────────────────────────
+function DocRow({ label, desc, fileType, file, onUpload, optional, multiple }) {
+  const fileCount = multiple ? (file ? file.length : 0) : (file ? 1 : 0);
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "16px 0", borderBottom: "1px solid #F5F2EE" }}>
+      <div style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: "#F5F2EE", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 18 }}>📄</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 14, fontWeight: 900, color: "#3D2B1F", marginBottom: 3 }}>
+          {label}{optional && <span style={{ fontWeight: 500, color: "#9B8778" }}> · optional</span>}
+        </p>
+        <p style={{ fontSize: 12, color: "#9B8778", marginBottom: 2 }}>{desc}</p>
+        <p style={{ fontSize: 11, color: "#B0A090" }}>{fileType}</p>
+        {fileCount > 0 && (
+          <p style={{ fontSize: 11, color: "#F5A623", marginTop: 3 }}>
+            ✓ {multiple ? `${fileCount} file${fileCount > 1 ? "s" : ""} selected` : file.name}
+          </p>
+        )}
+      </div>
+      <label style={{ flexShrink: 0 }}>
+        <span style={{ display: "inline-block", padding: "8px 18px", borderRadius: 10, border: "1.5px solid #F5A623", color: "#F5A623", fontSize: 13, fontWeight: 700, cursor: "pointer", backgroundColor: "white" }}>
+          {fileCount > 0 ? "Change" : "Upload"}
+        </span>
+        <input
+          type="file"
+          multiple={multiple}
+          style={{ display: "none" }}
+          onChange={(e) => onUpload(multiple ? e.target.files : e.target.files[0])}
+        />
+      </label>
+    </div>
+  );
+}
+
+const inputStyle = {
+  width: "100%", padding: "12px 16px", borderRadius: 12, border: "1.5px solid #EEE8E0",
+  backgroundColor: "#FAFAFA", fontSize: 14, fontFamily: "'Nunito', sans-serif",
+  color: "#3D2B1F", outline: "none", boxSizing: "border-box",
+};
 
 export default function SignUpPage() {
   const navigate = useNavigate();
+  const [step, setStep] = useState(1); // 1 = role select, 2 = pet lover form, shelter step 1, 3 = shelter docs, 4 = shelter done
   const [role, setRole] = useState("petlover");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   // Pet Lover fields
-  const [fullName, setFullName] = useState("");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
 
-  // Shelter fields
+  // Shelter step 1
   const [orgName, setOrgName] = useState("");
-  const [ssmNumber, setSsmNumber] = useState("");
   const [location, setLocation] = useState("");
   const [contactName, setContactName] = useState("");
-  const [workEmail, setWorkEmail] = useState("");
+  const [shelterEmail, setShelterEmail] = useState("");
   const [shelterPassword, setShelterPassword] = useState("");
-  const [showShelterPassword, setShowShelterPassword] = useState(false);
+  const [agreedTerms, setAgreedTerms] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  // Shelter step 2
+  const [ssmNumber, setSsmNumber] = useState("");
+  const [ssmCert, setSsmCert] = useState(null);
+  const [premisePhotos, setPremisePhotos] = useState(null);
+  const [dvsLicence, setDvsLicence] = useState(null);
+  const [vetLetter, setVetLetter] = useState(null);
+  const [otherDocs, setOtherDocs] = useState(null);
 
-    if (role === "petlover") {
-      if (!fullName || !email || !password || !confirmPassword) {
-        setError("Please fill in all fields.");
-        return;
-      }
-      if (password !== confirmPassword) {
-        setError("Passwords do not match.");
-        return;
-      }
-      if (password.length < 8) {
-        setError("Password must be at least 8 characters.");
-        return;
-      }
-      setLoading(true);
-      try {
-        const userCred = await createUserWithEmailAndPassword(auth, email, password);
-        await setDoc(doc(db, "users", userCred.user.uid), {
-          fullName,
-          email,
-          role: "petlover",
-          createdAt: serverTimestamp(),
-        });
-        navigate("/onboarding");
-      } catch (err) {
-        switch (err.code) {
-          case "auth/email-already-in-use":
-            setError("This email is already registered.");
-            break;
-          case "auth/invalid-email":
-            setError("Invalid email address.");
-            break;
-          case "auth/weak-password":
-            setError("Password must be at least 8 characters.");
-            break;
-          default:
-            setError("Something went wrong. Please try again.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      if (!orgName || !ssmNumber || !location || !contactName || !workEmail || !shelterPassword) {
-        setError("Please fill in all fields.");
-        return;
-      }
-      if (shelterPassword.length < 8) {
-        setError("Password must be at least 8 characters.");
-        return;
-      }
-      setLoading(true);
-      try {
-        const userCred = await createUserWithEmailAndPassword(auth, workEmail, shelterPassword);
-        await setDoc(doc(db, "users", userCred.user.uid), {
-          fullName: contactName,
-          email: workEmail,
-          role: "shelter",
-          orgName,
-          ssmNumber,
-          location,
-          createdAt: serverTimestamp(),
-        });
-        navigate("/shelter/dashboard");
-      } catch (err) {
-        switch (err.code) {
-          case "auth/email-already-in-use":
-            setError("This email is already registered.");
-            break;
-          case "auth/invalid-email":
-            setError("Invalid email address.");
-            break;
-          case "auth/weak-password":
-            setError("Password must be at least 8 characters.");
-            break;
-          default:
-            setError("Something went wrong. Please try again.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [submittedAt, setSubmittedAt] = useState(null);
+  const [shelterUid, setShelterUid] = useState(null);
+
+  // ── Pet Lover sign up ─────────────────────────────────────────────────────
+  const handlePetLoverSignUp = async () => {
+    if (!name.trim()) { setError("Please enter your name."); return; }
+    if (!email.trim()) { setError("Please enter your email."); return; }
+    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (password !== confirmPassword) { setError("Passwords do not match."); return; }
+    setLoading(true); setError("");
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, "users", cred.user.uid), {
+        name: name.trim(), email: email.trim(), role: "petlover",
+        createdAt: serverTimestamp(), onboardingCompleted: false,
+      });
+      navigate("/home");
+    } catch (err) {
+      setError(err.message.replace("Firebase: ", "").replace(/\(auth\/.*\)/, "").trim());
+    } finally { setLoading(false); }
   };
 
-  const inputClass =
-    "w-full border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition placeholder-gray-300";
+  // ── Shelter step 1 → step 2 ───────────────────────────────────────────────
+  const handleShelterStep1 = () => {
+    if (!orgName.trim()) { setError("Please enter your shelter name."); return; }
+    if (!location.trim()) { setError("Please enter your location."); return; }
+    if (!contactName.trim()) { setError("Please enter your name."); return; }
+    if (!shelterEmail.trim()) { setError("Please enter your email."); return; }
+    if (shelterPassword.length < 8) { setError("Password must be at least 8 characters."); return; }
+    if (!agreedTerms) { setError("Please agree to the Terms and Pet Welfare Pledge."); return; }
+    setError("");
+    setStep(3); // shelter docs
+  };
 
-  const FieldIcon = ({ children }) => (
-    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300">
-      {children}
-    </span>
-  );
+  // ── Shelter step 2 → submit ───────────────────────────────────────────────
+  const handleShelterSubmit = async () => {
+    if (!ssmNumber.trim()) { setError("Please enter your SSM number."); return; }
+    setLoading(true); setError("");
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, shelterEmail, shelterPassword);
+      const uid = cred.user.uid;
+      setShelterUid(uid);
 
-  return (
-    <div className="h-screen flex overflow-hidden">
-      <BrandingPanel variant="register" />
+      // Upload documents
+      const uploadFile = async (file, path) => {
+        if (!file) return null;
+        // FileList (multiple files)
+        if (file instanceof FileList || (file && file.length !== undefined && !(file instanceof File))) {
+          const urls = [];
+          for (let i = 0; i < file.length; i++) {
+            const f = file[i];
+            const storageRef = ref(storage, `shelter_docs/${uid}/${path}_${i}_${f.name}`);
+            await uploadBytes(storageRef, f);
+            urls.push(await getDownloadURL(storageRef));
+          }
+          return urls;
+        }
+        // Single file
+        const storageRef = ref(storage, `shelter_docs/${uid}/${path}_${file.name}`);
+        await uploadBytes(storageRef, file);
+        return getDownloadURL(storageRef);
+      };
 
-      {/* Right panel */}
-      <div className="flex-1 flex items-start justify-center overflow-y-auto bg-white px-10 py-12">
-        <div className="w-full max-w-sm">
-          <h2
-            className="text-4xl font-black text-gray-900 mb-1"
-            style={{ fontFamily: "'Nunito', sans-serif" }}
-          >
-            Create your account
-          </h2>
-          <p className="text-sm text-gray-400 mb-6">Choose how you'll use PawPal</p>
+      const [ssmCertUrl, premiseUrl, dvsUrl, vetUrl, otherUrl] = await Promise.all([
+        uploadFile(ssmCert, "ssm_cert"),
+        uploadFile(premisePhotos, "premise"),
+        uploadFile(dvsLicence, "dvs"),
+        uploadFile(vetLetter, "vet_letter"),
+        uploadFile(otherDocs, "other"),
+      ]);
 
-          {/* Role toggle */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            {[
-              { key: "petlover", emoji: "🐾", label: "Pet Lover", sub: "Adopt & rehome pets" },
-              { key: "shelter", emoji: "🏠", label: "Shelter", sub: "Manage & list animals" },
-            ].map(({ key, emoji, label, sub }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => { setRole(key); setError(""); }}
-                className="flex flex-col items-center gap-1.5 py-4 rounded-xl border-2 transition"
-                style={{
-                  borderColor: role === key ? "#F5A623" : "#E5E7EB",
-                  backgroundColor: role === key ? "#FFF8EE" : "white",
-                }}
-              >
-                <span className="text-2xl">{emoji}</span>
-                <span
-                  className="font-bold text-sm"
-                  style={{ color: role === key ? "#F5A623" : "#374151" }}
-                >
-                  {label}
-                </span>
-                <span className="text-xs text-gray-400">{sub}</span>
-              </button>
-            ))}
+      const now = new Date();
+      setSubmittedAt(now);
+
+      await setDoc(doc(db, "users", uid), {
+        orgName: orgName.trim(),
+        fullName: contactName.trim(),
+        email: shelterEmail.trim(),
+        location: location.trim(),
+        ssmNumber: ssmNumber.trim(),
+        role: "shelter",
+        verificationStatus: "pending",
+        submittedAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+        documents: {
+          ssmCert: ssmCertUrl,
+          premisePhotos: premiseUrl,
+          dvsLicence: dvsUrl,
+          vetLetter: vetUrl,
+          otherDocs: otherUrl,
+        },
+      });
+
+      setStep(4); // done
+    } catch (err) {
+      setError(err.message.replace("Firebase: ", "").replace(/\(auth\/.*\)/, "").trim());
+    } finally { setLoading(false); }
+  };
+
+  // ── STEP 1: Role selection ────────────────────────────────────────────────
+  if (step === 1) {
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#F5F2EE", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Nunito', sans-serif" }}>
+        <div style={{ backgroundColor: "white", borderRadius: 24, padding: "40px 36px", width: 420, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: "#3D2B1F", marginBottom: 6 }}>Create your account</h1>
+          <p style={{ fontSize: 14, color: "#9B8778", marginBottom: 28 }}>Choose how you'll use PawPal</p>
+
+          <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
+            <button onClick={() => setRole("petlover")} style={{ flex: 1, padding: "24px 16px", borderRadius: 16, cursor: "pointer", textAlign: "center", transition: "all 0.15s", backgroundColor: role === "petlover" ? "#FFF3E0" : "white", border: role === "petlover" ? "2px solid #F5A623" : "1.5px solid #EEE8E0" }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>🐾</div>
+              <p style={{ fontSize: 15, fontWeight: 900, color: role === "petlover" ? "#F5A623" : "#3D2B1F", marginBottom: 4 }}>Pet Lover</p>
+              <p style={{ fontSize: 12, color: "#9B8778" }}>Adopt &amp; rehome pets</p>
+            </button>
+            <button onClick={() => setRole("shelter")} style={{ flex: 1, padding: "24px 16px", borderRadius: 16, cursor: "pointer", textAlign: "center", transition: "all 0.15s", backgroundColor: role === "shelter" ? "#FFF3E0" : "white", border: role === "shelter" ? "2px solid #F5A623" : "1.5px solid #EEE8E0" }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>🏠</div>
+              <p style={{ fontSize: 15, fontWeight: 900, color: role === "shelter" ? "#F5A623" : "#3D2B1F", marginBottom: 4 }}>Shelter</p>
+              <p style={{ fontSize: 12, color: "#9B8778" }}>Manage &amp; list animals</p>
+            </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {role === "petlover" ? (
-              <>
-                {/* Full name */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Full name</label>
-                  <div className="relative">
-                    <FieldIcon>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-                      </svg>
-                    </FieldIcon>
-                    <input
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Your full name"
-                      className={inputClass}
-                      style={{ "--tw-ring-color": "#F5A623" }}
-                    />
-                  </div>
-                </div>
+          {role === "shelter" && (
+            <div style={{ backgroundColor: "#FFF8EC", border: "1.5px solid #FDDFA0", borderRadius: 14, padding: "16px 18px", marginBottom: 24 }}>
+              <p style={{ fontSize: 13, fontWeight: 900, color: "#F5A623", marginBottom: 6 }}>Shelters are verified before going public</p>
+              <p style={{ fontSize: 12, color: "#9B8778", lineHeight: 1.6 }}>Registration is two steps: your organization details, then your documents (SSM, premise photos, licences). A PawPal admin reviews them — usually within 48 hours — and you can track the status from your portal.</p>
+            </div>
+          )}
 
-                {/* Email */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
-                  <div className="relative">
-                    <FieldIcon>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                        <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/>
-                      </svg>
-                    </FieldIcon>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      className={inputClass}
-                      style={{ "--tw-ring-color": "#F5A623" }}
-                    />
-                  </div>
-                </div>
+          <button onClick={() => setStep(role === "shelter" ? 2 : "pl")} style={{ width: "100%", padding: "15px 0", borderRadius: 14, backgroundColor: "#F5A623", color: "white", fontWeight: 900, fontSize: 15, border: "none", cursor: "pointer" }}>
+            {role === "shelter" ? "Register my shelter →" : "Get started →"}
+          </button>
 
-                {/* Password */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
-                  <div className="relative">
-                    <FieldIcon>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                      </svg>
-                    </FieldIcon>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className={`${inputClass} pr-16`}
-                      style={{ "--tw-ring-color": "#F5A623" }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium"
-                      style={{ color: "#F5A623" }}
-                    >
-                      {showPassword ? "Hide" : "Show"}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Confirm password */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Confirm password</label>
-                  <div className="relative">
-                    <FieldIcon>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                      </svg>
-                    </FieldIcon>
-                    <input
-                      type={showConfirm ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className={`${inputClass} pr-16`}
-                      style={{ "--tw-ring-color": "#F5A623" }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirm(!showConfirm)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium"
-                      style={{ color: "#F5A623" }}
-                    >
-                      {showConfirm ? "Hide" : "Show"}
-                    </button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Org name */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Organization name</label>
-                  <div className="relative">
-                    <FieldIcon>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                        <path d="M3 21h18M9 21V7l6-4v18M9 11h6"/><rect x="13" y="13" width="2" height="4"/>
-                      </svg>
-                    </FieldIcon>
-                    <input
-                      type="text"
-                      value={orgName}
-                      onChange={(e) => setOrgName(e.target.value)}
-                      placeholder="Melaka Animal Haven"
-                      className={inputClass}
-                      style={{ "--tw-ring-color": "#F5A623" }}
-                    />
-                  </div>
-                </div>
-
-                {/* SSM */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Registration / SSM number</label>
-                  <div className="relative">
-                    <FieldIcon>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                        <rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/>
-                      </svg>
-                    </FieldIcon>
-                    <input
-                      type="text"
-                      value={ssmNumber}
-                      onChange={(e) => setSsmNumber(e.target.value)}
-                      placeholder="e.g. 202301045678"
-                      className={inputClass}
-                      style={{ "--tw-ring-color": "#F5A623" }}
-                    />
-                  </div>
-                </div>
-
-                {/* Location */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Location</label>
-                  <div className="relative">
-                    <FieldIcon>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>
-                      </svg>
-                    </FieldIcon>
-                    <input
-                      type="text"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      placeholder="City, State"
-                      className={inputClass}
-                      style={{ "--tw-ring-color": "#F5A623" }}
-                    />
-                  </div>
-                </div>
-
-                {/* Contact name */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Your name</label>
-                  <div className="relative">
-                    <FieldIcon>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-                      </svg>
-                    </FieldIcon>
-                    <input
-                      type="text"
-                      value={contactName}
-                      onChange={(e) => setContactName(e.target.value)}
-                      placeholder="Your full name"
-                      className={inputClass}
-                      style={{ "--tw-ring-color": "#F5A623" }}
-                    />
-                  </div>
-                </div>
-
-                {/* Work email */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Work email</label>
-                  <div className="relative">
-                    <FieldIcon>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                        <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/>
-                      </svg>
-                    </FieldIcon>
-                    <input
-                      type="email"
-                      value={workEmail}
-                      onChange={(e) => setWorkEmail(e.target.value)}
-                      placeholder="you@shelter.org"
-                      className={inputClass}
-                      style={{ "--tw-ring-color": "#F5A623" }}
-                    />
-                  </div>
-                </div>
-
-                {/* Shelter password */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
-                  <div className="relative">
-                    <FieldIcon>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                      </svg>
-                    </FieldIcon>
-                    <input
-                      type={showShelterPassword ? "text" : "password"}
-                      value={shelterPassword}
-                      onChange={(e) => setShelterPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className={`${inputClass} pr-16`}
-                      style={{ "--tw-ring-color": "#F5A623" }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowShelterPassword(!showShelterPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium"
-                      style={{ color: "#F5A623" }}
-                    >
-                      {showShelterPassword ? "Hide" : "Show"}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full text-white font-bold py-3.5 rounded-xl transition text-sm mt-1"
-              style={{
-                backgroundColor: loading ? "#F8C97A" : "#F5A623",
-                fontFamily: "'Nunito', sans-serif",
-              }}
-            >
-              {loading
-                ? "Creating account..."
-                : role === "petlover"
-                ? "Sign up"
-                : "Create shelter account"}
-            </button>
-          </form>
-
-          <p className="text-center text-sm text-gray-400 mt-6">
+          <p style={{ textAlign: "center", fontSize: 13, color: "#9B8778", marginTop: 18 }}>
             Already have an account?{" "}
-            <a href="/" className="font-bold" style={{ color: "#F5A623" }}>
-              Sign in
-            </a>
+            <button onClick={() => navigate("/")} style={{ color: "#F5A623", fontWeight: 900, background: "none", border: "none", cursor: "pointer", fontSize: 13 }}>Sign in</button>
           </p>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // ── Pet Lover form ────────────────────────────────────────────────────────
+  if (step === "pl") {
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#F5F2EE", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Nunito', sans-serif" }}>
+        <div style={{ backgroundColor: "white", borderRadius: 24, padding: "40px 36px", width: 420, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+          <button onClick={() => { setStep(1); setError(""); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#9B8778", fontSize: 13, fontWeight: 700, marginBottom: 20, padding: 0, fontFamily: "'Nunito', sans-serif" }}>‹ Back</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+            <span style={{ fontSize: 24 }}>🐾</span>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: "#3D2B1F" }}>Create your account</h1>
+          </div>
+          <p style={{ fontSize: 13, color: "#9B8778", marginBottom: 24 }}>Join PawPal as a Pet Lover</p>
+          {error && <div style={{ backgroundColor: "#FEE2E2", color: "#EF4444", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 16 }}>{error}</div>}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#6B5E52", display: "block", marginBottom: 6 }}>Full name</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Nur Aisyah" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#6B5E52", display: "block", marginBottom: 6 }}>Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#6B5E52", display: "block", marginBottom: 6 }}>Password</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#6B5E52", display: "block", marginBottom: 6 }}>Confirm password</label>
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter password" style={inputStyle} />
+            </div>
+            <button onClick={handlePetLoverSignUp} disabled={loading} style={{ width: "100%", padding: "14px 0", borderRadius: 14, backgroundColor: loading ? "#F8C97A" : "#F5A623", color: "white", fontWeight: 900, fontSize: 15, border: "none", cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}>
+              {loading ? "Creating account..." : "Create account →"}
+            </button>
+          </div>
+          <p style={{ textAlign: "center", fontSize: 13, color: "#9B8778", marginTop: 18 }}>
+            Already have an account?{" "}
+            <button onClick={() => navigate("/")} style={{ color: "#F5A623", fontWeight: 900, background: "none", border: "none", cursor: "pointer", fontSize: 13 }}>Sign in</button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── SHELTER STEP 2: Organization details ──────────────────────────────────
+  if (step === 2) {
+    const canContinue = orgName.trim() && location.trim() && contactName.trim() && shelterEmail.trim() && shelterPassword.length >= 8 && agreedTerms;
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#F5F2EE", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Nunito', sans-serif" }}>
+        <div style={{ backgroundColor: "white", borderRadius: 24, padding: "40px 36px", width: 460, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+          <Stepper current={1} />
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: "#3D2B1F", marginBottom: 4 }}>Organization details</h1>
+          <p style={{ fontSize: 13, color: "#F5A623", marginBottom: 24, fontWeight: 600 }}>Tell us who you are. Documents come next.</p>
+          {error && <div style={{ backgroundColor: "#FEE2E2", color: "#EF4444", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 16 }}>{error}</div>}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#3D2B1F", display: "block", marginBottom: 6 }}>Organization name</label>
+              <input value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder="Melaka Animal Haven" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#3D2B1F", display: "block", marginBottom: 6 }}>Location</label>
+              <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ayer Keroh, Melaka" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#3D2B1F", display: "block", marginBottom: 6 }}>Your name</label>
+              <input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Liyana Afiera" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#3D2B1F", display: "block", marginBottom: 6 }}>Email</label>
+              <div style={{ position: "relative" }}>
+                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#9B8778", fontSize: 14 }}>✉</span>
+                <input type="email" value={shelterEmail} onChange={(e) => setShelterEmail(e.target.value)} placeholder="you@shelter.org" style={{ ...inputStyle, paddingLeft: 36 }} />
+              </div>
+            </div>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#3D2B1F", display: "block", marginBottom: 6 }}>Password</label>
+              <div style={{ position: "relative" }}>
+                <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#9B8778", fontSize: 14 }}>🔒</span>
+                <input type="password" value={shelterPassword} onChange={(e) => setShelterPassword(e.target.value)} placeholder="At least 8 characters" style={{ ...inputStyle, paddingLeft: 36 }} />
+              </div>
+            </div>
+
+            {/* Terms checkbox */}
+            <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+              <input type="checkbox" checked={agreedTerms} onChange={(e) => setAgreedTerms(e.target.checked)} style={{ width: 16, height: 16, accentColor: "#F5A623" }} />
+              <span style={{ fontSize: 12, color: "#6B5E52" }}>
+                I agree to PawPal's{" "}
+                <span style={{ color: "#F5A623", fontWeight: 700 }}>Terms</span>
+                {" "}and{" "}
+                <span style={{ color: "#F5A623", fontWeight: 700 }}>Pet Welfare Pledge</span>.
+              </span>
+            </label>
+
+            <button onClick={handleShelterStep1} style={{ width: "100%", padding: "14px 0", borderRadius: 14, backgroundColor: canContinue ? "#F5A623" : "#F8C97A", color: "white", fontWeight: 900, fontSize: 15, border: "none", cursor: canContinue ? "pointer" : "not-allowed", marginTop: 4 }}>
+              Continue to documents →
+            </button>
+            <p style={{ textAlign: "center", fontSize: 12, color: "#9B8778", marginTop: -4 }}>Fill in every field (password 8+ characters) to continue</p>
+          </div>
+          <p style={{ textAlign: "center", fontSize: 13, color: "#9B8778", marginTop: 16 }}>
+            Already registered?{" "}
+            <button onClick={() => navigate("/")} style={{ color: "#F5A623", fontWeight: 900, background: "none", border: "none", cursor: "pointer", fontSize: 13 }}>Sign in</button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── SHELTER STEP 3: Documents ─────────────────────────────────────────────
+  if (step === 3) {
+    const canSubmit = ssmNumber.trim();
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#F5F2EE", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Nunito', sans-serif" }}>
+        <div style={{ backgroundColor: "white", borderRadius: 24, padding: "40px 36px", width: 460, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+          <Stepper current={2} />
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: "#3D2B1F", marginBottom: 4 }}>Verification documents</h1>
+          <p style={{ fontSize: 13, color: "#9B8778", marginBottom: 24 }}>
+            For <span style={{ fontWeight: 900, color: "#3D2B1F" }}>{orgName || "your shelter"}</span> · required unless marked optional
+          </p>
+          {error && <div style={{ backgroundColor: "#FEE2E2", color: "#EF4444", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 16 }}>{error}</div>}
+
+          {/* SSM number */}
+          <div style={{ marginBottom: 4 }}>
+            <label style={{ fontSize: 13, fontWeight: 700, color: "#3D2B1F", display: "block", marginBottom: 6 }}>Registration / SSM number</label>
+            <input value={ssmNumber} onChange={(e) => setSsmNumber(e.target.value)} placeholder="e.g. 202301045678" style={inputStyle} />
+          </div>
+
+          {/* Document rows */}
+          <DocRow label="SSM registration certificate" desc="Company/society registration from SSM or ROS" fileType="PDF or image" file={ssmCert} onUpload={setSsmCert} />
+          <DocRow label="Premise photos" desc="At least 4 photos: kennels, quarantine area, entrance, feeding area" fileType="Images, min 4" file={premisePhotos} onUpload={setPremisePhotos} multiple />
+          <DocRow label="DVS animal facility licence" desc="Licence from the Department of Veterinary Services" fileType="PDF or image" file={dvsLicence} onUpload={setDvsLicence} />
+          <DocRow label="Vet partnership letter" desc="Signed letter from your attending veterinarian" fileType="PDF" file={vetLetter} onUpload={setVetLetter} />
+          <DocRow label="Other supporting documents" desc="Tenancy agreement, insurance, awards — anything that helps" fileType="Any file" file={otherDocs} onUpload={setOtherDocs} optional multiple />
+
+          {/* Privacy note */}
+          <div style={{ backgroundColor: "#F5F2EE", borderRadius: 12, padding: "12px 14px", margin: "20px 0", fontSize: 12, color: "#9B8778" }}>
+            🔒 Documents are visible only to PawPal admins during review.
+          </div>
+
+          <div style={{ display: "flex", gap: 12 }}>
+            <button onClick={() => { setStep(2); setError(""); }} style={{ padding: "14px 20px", borderRadius: 14, backgroundColor: "white", border: "1.5px solid #EEE8E0", color: "#6B5E52", fontWeight: 900, fontSize: 14, cursor: "pointer" }}>
+              ← Back
+            </button>
+            <button onClick={handleShelterSubmit} disabled={loading || !canSubmit} style={{ flex: 1, padding: "14px 0", borderRadius: 14, backgroundColor: canSubmit && !loading ? "#F5A623" : "#F8C97A", color: "white", fontWeight: 900, fontSize: 14, border: "none", cursor: canSubmit && !loading ? "pointer" : "not-allowed" }}>
+              {loading ? "Submitting..." : "Submit for verification"}
+            </button>
+          </div>
+          {!canSubmit && <p style={{ textAlign: "center", fontSize: 12, color: "#9B8778", marginTop: 8 }}>Enter your registration number</p>}
+        </div>
+      </div>
+    );
+  }
+
+  // ── SHELTER STEP 4: Done ──────────────────────────────────────────────────
+  if (step === 4) {
+    const submitted = submittedAt ? submittedAt.toLocaleString("en-MY", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#F5F2EE", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Nunito', sans-serif" }}>
+        <div style={{ backgroundColor: "white", borderRadius: 24, padding: "40px 36px", width: 460, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+          <Stepper current={3} />
+
+          <div style={{ textAlign: "center", marginBottom: 28 }}>
+            <div style={{ fontSize: 52, marginBottom: 16 }}>📬</div>
+            <h1 style={{ fontSize: 24, fontWeight: 900, color: "#3D2B1F", marginBottom: 10 }}>Sent to PawPal admins</h1>
+            <p style={{ fontSize: 14, color: "#9B8778", lineHeight: 1.6 }}>
+              <span style={{ fontWeight: 900, color: "#3D2B1F" }}>{orgName}</span> is in the verification queue. Reviews usually finish within 48 hours.
+            </p>
+          </div>
+
+          {/* Details card */}
+          <div style={{ backgroundColor: "#F5F2EE", borderRadius: 14, padding: "16px 20px", marginBottom: 20 }}>
+            {[
+              { label: "Submitted", value: submitted },
+              { label: "Review target", value: "Within 48 hours" },
+            ].map((item) => (
+              <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #EEE8E0" }}>
+                <span style={{ fontSize: 13, color: "#9B8778" }}>{item.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 900, color: "#3D2B1F" }}>{item.value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* While you wait note */}
+          <div style={{ backgroundColor: "#FFF8EC", border: "1.5px solid #FDDFA0", borderRadius: 14, padding: "14px 18px", marginBottom: 24, fontSize: 13, color: "#9B8778", lineHeight: 1.6 }}>
+            <span style={{ fontWeight: 900, color: "#F5A623" }}>While you wait:</span> you can sign in and explore PawPal, but they are features that will be available once your shelter is approved.
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <button onClick={() => navigate("/shelter/dashboard")} style={{ width: "100%", padding: "15px 0", borderRadius: 14, backgroundColor: "#F5A623", color: "white", fontWeight: 900, fontSize: 15, border: "none", cursor: "pointer" }}>
+              Go to my shelter portal
+            </button>
+            <button onClick={() => navigate("/")} style={{ width: "100%", padding: "15px 0", borderRadius: 14, backgroundColor: "white", border: "1.5px solid #EEE8E0", color: "#6B5E52", fontWeight: 900, fontSize: 15, cursor: "pointer" }}>
+              Back to sign in
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
