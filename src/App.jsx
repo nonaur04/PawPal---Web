@@ -49,6 +49,9 @@ import ShelterMessagesPage from "./shelter-pages/ShelterMessagesPage";
 import ShelterProfilePage from "./shelter-pages/ShelterProfilePage";
 import ShelterSettingsPage from "./shelter-pages/ShelterSettingsPage";
 
+// Admin
+import AdminOverviewPage from "./admin-pages/AdminOverviewPage";
+
 function App() {
   return (
     <Routes>
@@ -101,6 +104,10 @@ function App() {
       <Route path="/shelter/messages" element={<ShelterMessagesPage />} />
       <Route path="/shelter/profile" element={<ShelterProfilePage />} />
       <Route path="/shelter/settings" element={<ShelterSettingsPage />} />
+
+      // Admin
+      <Route path="/admin" element={<AdminOverviewPage />} />
+      <Route path="/admin/verification" element={<AdminOverviewPage />} />
     </Routes>
   );
 }
