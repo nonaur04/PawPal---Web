@@ -1,5 +1,5 @@
 // src/components/AdminSidebar.jsx
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase/firebase";
@@ -39,6 +39,15 @@ function ChevronIcon({ className = "" }) {
     </svg>
   );
 }
+function LogoutIcon({ className = "" }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="M16 17l5-5-5-5" />
+      <path d="M21 12H9" />
+    </svg>
+  );
+}
 
 /**
  * AdminSidebar
@@ -48,17 +57,20 @@ function ChevronIcon({ className = "" }) {
 export default function AdminSidebar({ adminName = "Admin", pendingCount = 0 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [showSignOut, setShowSignOut] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   const isActive = (path) =>
     path === "/admin"
       ? location.pathname === "/admin"
       : location.pathname.startsWith(path);
 
-  const handleSignOut = async () => {
+  const confirmSignOut = async () => {
+    setSigningOut(true);
     try {
       await signOut(auth);
     } finally {
-      navigate("/login");
+      navigate("/");
     }
   };
 
@@ -128,12 +140,51 @@ export default function AdminSidebar({ adminName = "Admin", pendingCount = 0 }) 
           </div>
         </div>
         <button
-          onClick={handleSignOut}
+          onClick={() => setShowSignOut(true)}
           className="mt-2 w-full rounded-2xl border border-[#EDE7DC] bg-white py-2.5 text-sm font-semibold text-[#3B342B] hover:bg-[#F7F2EA]"
         >
           Sign out
         </button>
       </div>
+
+      {/* sign out confirmation popup */}
+      {showSignOut && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onClick={() => !signingOut && setShowSignOut(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#FCEBD0] text-[#D98016]">
+              <LogoutIcon className="h-7 w-7" />
+            </div>
+            <h3 className="text-center text-xl font-extrabold text-[#2A2118]">
+              Sign out?
+            </h3>
+            <p className="mt-1 text-center text-sm text-[#8A7B67]">
+              Are you sure you want to sign out of the Admin Console?
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setShowSignOut(false)}
+                disabled={signingOut}
+                className="flex-1 rounded-2xl border border-[#EDE7DC] bg-white py-3 text-sm font-semibold text-[#3B342B] hover:bg-[#F7F2EA] disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSignOut}
+                disabled={signingOut}
+                className="flex-1 rounded-2xl bg-[#F5A623] py-3 text-sm font-bold text-white hover:bg-[#E5991A] disabled:opacity-60"
+              >
+                {signingOut ? "Signing out..." : "Sign out"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
