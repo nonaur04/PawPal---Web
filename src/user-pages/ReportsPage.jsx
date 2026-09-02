@@ -27,7 +27,7 @@ function StatusBadge({ status }) {
     resolved: { bg: "#DCFCE7", color: "#16A34A", label: "resolved" },
   };
   const s = map[status] ?? map.open;
-  return <span className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ backgroundColor: s.bg, color: s.color }}>{s.label}</span>;
+  return <span className="text-xs font-bold px-3 py-1.5 rounded-full shrink-0" style={{ backgroundColor: s.bg, color: s.color }}>{s.label}</span>;
 }
 
 function StrayRow({ report, isOwn, onClick }) {
@@ -60,8 +60,8 @@ function LostCard({ report, isOwn, onClick }) {
   const emoji = SPECIES_EMOJI[report.species?.toLowerCase()] ?? "🐾";
   const photo = report.photoUrls?.[0] ?? null;
   return (
-    <div onClick={onClick} className="rounded-2xl overflow-hidden cursor-pointer hover:shadow-sm transition"
-      style={{ backgroundColor: "white", border: "1px solid #EEE8E0", width: 320 }}>
+    <div onClick={onClick} className="rounded-2xl overflow-hidden cursor-pointer hover:shadow-sm transition w-full sm:w-[320px]"
+      style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
       <div className="relative flex items-center justify-center"
         style={{ height: 200, backgroundColor: bg, backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,255,255,0.18) 8px, rgba(255,255,255,0.18) 16px)" }}>
         {photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : <span style={{ fontSize: 64 }}>{emoji}</span>}
@@ -127,7 +127,7 @@ export default function ReportsPage() {
       <Sidebar userName={userName} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
             <h1 className="text-2xl font-black mb-1" style={{ color: "#3D2B1F" }}>Reports</h1>
             <p className="text-sm mb-5" style={{ color: "#9B8778" }}>Help strays, post lost pets, celebrate reunions</p>
@@ -144,17 +144,17 @@ export default function ReportsPage() {
 
             {activeTab === "stray" && (
               <div className="max-w-5xl">
-                <div className="flex items-center justify-between px-6 py-4 rounded-2xl mb-6" style={{ backgroundColor: "#FFF3E0", border: "1px solid #F5E6CC" }}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-5 sm:px-6 py-4 rounded-2xl mb-6" style={{ backgroundColor: "#FFF3E0", border: "1px solid #F5E6CC" }}>
                   <div className="flex items-center gap-4">
                     <span className="text-3xl">🚨</span>
                     <div><p className="font-black text-sm" style={{ color: "#3D2B1F" }}>Spotted a stray?</p><p className="text-xs" style={{ color: "#9B8778" }}>Report it — the nearest shelter will respond.</p></div>
                   </div>
-                  <button onClick={() => navigate("/reports/new-stray")} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shrink-0" style={{ backgroundColor: "#F5A623" }}>+ New report</button>
+                  <button onClick={() => navigate("/reports/new-stray")} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 w-full sm:w-auto" style={{ backgroundColor: "#F5A623" }}>+ New report</button>
                 </div>
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <div><h2 className="font-black text-lg" style={{ color: "#3D2B1F" }}>Your Reports</h2><p className="text-xs" style={{ color: "#9B8778" }}>Strays you've reported</p></div>
-                    <button onClick={() => navigate("/reports/my-strays")} className="text-sm font-bold flex items-center gap-1" style={{ color: "#F5A623" }}>View all ›</button>
+                    <button onClick={() => navigate("/reports/my-strays")} className="text-sm font-bold flex items-center gap-1 shrink-0" style={{ color: "#F5A623" }}>View all ›</button>
                   </div>
                   {loading ? <div className="space-y-3">{[1,2].map((i) => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ backgroundColor: "white" }} />)}</div>
                     : myStrayReports.length === 0 ? <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}><p className="text-sm" style={{ color: "#9B8778" }}>You haven't reported any strays yet.</p></div>
@@ -163,7 +163,7 @@ export default function ReportsPage() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <div><h2 className="font-black text-lg" style={{ color: "#3D2B1F" }}>All Reports</h2><p className="text-xs" style={{ color: "#9B8778" }}>Community stray reports nearby</p></div>
-                    <button onClick={() => navigate("/reports/all-strays")} className="text-sm font-bold flex items-center gap-1" style={{ color: "#F5A623" }}>View all ›</button>
+                    <button onClick={() => navigate("/reports/all-strays")} className="text-sm font-bold flex items-center gap-1 shrink-0" style={{ color: "#F5A623" }}>View all ›</button>
                   </div>
                   {loading ? <div className="space-y-3">{[1,2,3].map((i) => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ backgroundColor: "white" }} />)}</div>
                     : allStrayReports.length === 0 ? <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}><p className="text-sm" style={{ color: "#9B8778" }}>No community reports yet.</p></div>
@@ -174,28 +174,28 @@ export default function ReportsPage() {
 
             {activeTab === "lost" && (
               <div className="max-w-5xl">
-                <div className="flex items-center justify-between px-6 py-4 rounded-2xl mb-6" style={{ backgroundColor: "#FFF3E0", border: "1px solid #F5E6CC" }}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-5 sm:px-6 py-4 rounded-2xl mb-6" style={{ backgroundColor: "#FFF3E0", border: "1px solid #F5E6CC" }}>
                   <div className="flex items-center gap-4">
                     <span className="text-3xl">🔍</span>
                     <div><p className="font-black text-sm" style={{ color: "#3D2B1F" }}>Lost your pet?</p><p className="text-xs" style={{ color: "#9B8778" }}>Post a description so the community can help.</p></div>
                   </div>
-                  <button onClick={() => navigate("/reports/new-lost")} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shrink-0" style={{ backgroundColor: "#F5A623" }}>+ New post</button>
+                  <button onClick={() => navigate("/reports/new-lost")} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 w-full sm:w-auto" style={{ backgroundColor: "#F5A623" }}>+ New post</button>
                 </div>
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <div><h2 className="font-black text-lg" style={{ color: "#3D2B1F" }}>Your Reports</h2><p className="text-xs" style={{ color: "#9B8778" }}>Lost pets you've posted</p></div>
-                    <button onClick={() => navigate("/reports/my-lost")} className="text-sm font-bold flex items-center gap-1" style={{ color: "#F5A623" }}>View all ›</button>
+                    <button onClick={() => navigate("/reports/my-lost")} className="text-sm font-bold flex items-center gap-1 shrink-0" style={{ color: "#F5A623" }}>View all ›</button>
                   </div>
-                  {loading ? <div className="flex gap-4">{[1,2].map((i) => <div key={i} className="rounded-2xl animate-pulse" style={{ width: 320, height: 340, backgroundColor: "white" }} />)}</div>
+                  {loading ? <div className="flex gap-4">{[1,2].map((i) => <div key={i} className="rounded-2xl animate-pulse w-full sm:w-[320px]" style={{ height: 340, backgroundColor: "white" }} />)}</div>
                     : myLostReports.length === 0 ? <div className="rounded-2xl p-6 text-center max-w-xs" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}><p className="text-sm" style={{ color: "#9B8778" }}>You haven't posted any lost pets yet.</p></div>
                     : <div className="flex gap-4 flex-wrap">{myLostReports.map((r) => <LostCard key={r.id} report={r} isOwn={true} onClick={() => navigate(`/reports/lost/${r.id}`)} />)}</div>}
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <div><h2 className="font-black text-lg" style={{ color: "#3D2B1F" }}>All Reports</h2><p className="text-xs" style={{ color: "#9B8778" }}>Lost pets posted by the community</p></div>
-                    <button onClick={() => navigate("/reports/all-lost")} className="text-sm font-bold flex items-center gap-1" style={{ color: "#F5A623" }}>View all ›</button>
+                    <button onClick={() => navigate("/reports/all-lost")} className="text-sm font-bold flex items-center gap-1 shrink-0" style={{ color: "#F5A623" }}>View all ›</button>
                   </div>
-                  {loading ? <div className="flex gap-4">{[1,2,3].map((i) => <div key={i} className="rounded-2xl animate-pulse" style={{ width: 320, height: 340, backgroundColor: "white" }} />)}</div>
+                  {loading ? <div className="flex gap-4">{[1,2,3].map((i) => <div key={i} className="rounded-2xl animate-pulse w-full sm:w-[320px]" style={{ height: 340, backgroundColor: "white" }} />)}</div>
                     : allLostReports.length === 0 ? <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}><p className="text-sm" style={{ color: "#9B8778" }}>No community lost pet posts yet.</p></div>
                     : <div className="flex gap-4 flex-wrap">{allLostReports.map((r) => <LostCard key={r.id} report={r} isOwn={false} onClick={() => navigate(`/reports/lost/${r.id}`)} />)}</div>}
                 </div>

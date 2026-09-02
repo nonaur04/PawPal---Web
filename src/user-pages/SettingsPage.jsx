@@ -258,7 +258,7 @@ export default function SettingsPage() {
       <Sidebar userName={userName} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
             <h1 className="text-2xl font-black mb-1" style={{ color: "#3D2B1F" }}>Settings</h1>
             <p className="text-sm mb-6" style={{ color: "#9B8778" }}>Manage your account and preferences</p>
@@ -269,7 +269,7 @@ export default function SettingsPage() {
               <div className="max-w-3xl space-y-5">
 
                 {/* Account */}
-                <div className="rounded-2xl p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+                <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                   <h2 className="font-black text-base mb-5" style={{ color: "#3D2B1F" }}>Account</h2>
                   <div className="space-y-4">
                     <div>
@@ -336,7 +336,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Adoption preferences */}
-                <div className="rounded-2xl p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+                <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                   <h2 className="font-black text-base mb-1" style={{ color: "#3D2B1F" }}>Adoption preferences</h2>
                   <p className="text-sm mb-4" style={{ color: "#9B8778" }}>What kind of pet you're looking to adopt.</p>
                   <div className="space-y-3 mb-4">
@@ -360,7 +360,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Sign out + Delete */}
-                <div className="rounded-2xl p-6 space-y-3" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+                <div className="rounded-2xl p-5 sm:p-6 space-y-3" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                   <button onClick={() => setShowSignOutConfirm(true)}
                     className="w-full py-3 rounded-xl text-sm font-bold"
                     style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}>

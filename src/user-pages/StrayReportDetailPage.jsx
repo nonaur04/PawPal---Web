@@ -30,7 +30,7 @@ function StatusBadge({ status }) {
   };
   const s = map[status] ?? map.open;
   return (
-    <span className="text-sm font-bold px-3 py-1.5 rounded-full" style={{ backgroundColor: s.bg, color: s.color }}>
+    <span className="text-sm font-bold px-3 py-1.5 rounded-full shrink-0" style={{ backgroundColor: s.bg, color: s.color }}>
       {s.label}
     </span>
   );
@@ -94,16 +94,16 @@ export default function StrayReportDetailPage() {
       <Sidebar userName={userName} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
 
             <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-semibold mb-5" style={{ color: "#6B5E52" }}>
               ‹ Back to Reports
             </button>
 
-            <div className="flex gap-8">
+            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
               {/* Left: photos + location map */}
-              <div className="flex flex-col gap-4" style={{ width: 440 }}>
+              <div className="flex flex-col gap-4 w-full lg:w-[440px]">
                 {/* Main photo */}
                 <div className="rounded-2xl overflow-hidden flex items-center justify-center relative"
                   style={{
@@ -155,7 +155,7 @@ export default function StrayReportDetailPage() {
               {/* Right: details */}
               <div className="flex-1 min-w-0">
                 {/* Title + status */}
-                <div className="flex items-start justify-between mb-1">
+                <div className="flex items-start justify-between gap-3 mb-1">
                   <h1 className="text-3xl font-black" style={{ color: "#3D2B1F" }}>
                     {report.title || report.description?.slice(0, 30)}
                   </h1>
@@ -182,7 +182,7 @@ export default function StrayReportDetailPage() {
 
                 {/* Location */}
                 {(report.address || report.location) && (
-                  <div className="rounded-2xl overflow-hidden mb-6" style={{ backgroundColor: "white", border: "1px solid #EEE8E0", maxWidth: 360 }}>
+                  <div className="rounded-2xl overflow-hidden mb-6 w-full" style={{ backgroundColor: "white", border: "1px solid #EEE8E0", maxWidth: 360 }}>
                     <p className="font-black px-4 pt-4 pb-2" style={{ color: "#3D2B1F" }}>Location</p>
                     {report.location ? (
                       <img
