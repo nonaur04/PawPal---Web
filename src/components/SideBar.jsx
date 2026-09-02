@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase/firebase";
+import { useMobileNav, closeNav } from "./useMobileNav";
 
 const NAV = [
   { icon: "🏠", label: "Discover", path: "/home" },
@@ -13,14 +15,21 @@ const NAV = [
 export default function Sidebar({ userName }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const open = useMobileNav();
+
+  // Close the drawer whenever the route changes (covers nav / profile / settings taps)
+  useEffect(() => {
+    closeNav();
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     await signOut(auth);
     navigate("/");
   };
 
-  return (
-    <aside className="w-56 flex flex-col justify-between py-6 px-4 shrink-0 h-screen sticky top-0" style={{ backgroundColor: "#FFFFFF", borderRight: "1px solid #EEE8E0" }}>
+  // Shared body — identical markup for the desktop rail and the mobile drawer
+  const body = (
+    <>
       <div>
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8 px-2">
@@ -83,6 +92,46 @@ export default function Sidebar({ userName }) {
           </div>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* ===== Desktop rail (lg and up) — unchanged ===== */}
+      <aside
+        className="hidden lg:flex w-56 flex-col justify-between py-6 px-4 shrink-0 h-screen sticky top-0"
+        style={{ backgroundColor: "#FFFFFF", borderRight: "1px solid #EEE8E0" }}
+      >
+        {body}
+      </aside>
+
+      {/* ===== Overlay (mobile) ===== */}
+      {open && (
+        <div
+          onClick={closeNav}
+          className="lg:hidden fixed inset-0 z-40 bg-black/40"
+        />
+      )}
+
+      {/* ===== Drawer (mobile) ===== */}
+      <aside
+        className={`lg:hidden fixed top-0 left-0 z-50 w-64 max-w-[80%] h-screen flex flex-col justify-between py-6 px-4 overflow-y-auto transition-transform duration-300 ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+        style={{ backgroundColor: "#FFFFFF", borderRight: "1px solid #EEE8E0" }}
+      >
+        <button
+          onClick={closeNav}
+          aria-label="Close menu"
+          className="absolute top-4 right-4 p-1 rounded-lg transition hover:bg-gray-50"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B5E52" strokeWidth="2" strokeLinecap="round">
+            <line x1="6" y1="6" x2="18" y2="18" />
+            <line x1="18" y1="6" x2="6" y2="18" />
+          </svg>
+        </button>
+        {body}
+      </aside>
+    </>
   );
 }

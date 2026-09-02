@@ -253,7 +253,7 @@ export default function BrowseAllPetsPage() {
       <Sidebar userName={userName} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
 
             <button
@@ -264,18 +264,18 @@ export default function BrowseAllPetsPage() {
               ‹ Back to discover
             </button>
 
-            <div className="flex items-start justify-between mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
               <div>
                 <h1 className="text-2xl font-black" style={{ color: "#3D2B1F" }}>{config.title}</h1>
                 <p className="text-sm mt-0.5" style={{ color: "#9B8778" }}>{config.subtitle}</p>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ backgroundColor: "white", border: "1px solid #EEE8E0", width: 260 }}>
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl w-full sm:w-[260px]" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                 <span className="text-gray-400 text-sm">🔍</span>
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search name, breed, area"
-                  className="flex-1 bg-transparent text-sm outline-none placeholder-gray-300"
+                  className="flex-1 bg-transparent text-sm outline-none placeholder-gray-300 min-w-0"
                   style={{ fontFamily: "'Nunito', sans-serif" }}
                 />
               </div>
@@ -313,7 +313,7 @@ export default function BrowseAllPetsPage() {
             </p>
 
             {loading ? (
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                   <div key={i} className="rounded-2xl animate-pulse" style={{ height: 260, backgroundColor: "white" }} />
                 ))}
@@ -325,9 +325,9 @@ export default function BrowseAllPetsPage() {
                 <p className="text-sm" style={{ color: "#9B8778" }}>Try a different filter or search term</p>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 {filtered.map((p) => (
-                  <PetCard key={p.id} pet={toCardPet(p)} />
+                  <PetCard key={p.id} pet={toCardPet(p)} fluid />
                 ))}
               </div>
             )}

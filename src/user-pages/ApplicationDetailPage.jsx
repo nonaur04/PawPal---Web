@@ -147,7 +147,7 @@ export default function ApplicationDetailPage() {
       <Sidebar userName={userName} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
 
             {/* Header */}
@@ -159,8 +159,8 @@ export default function ApplicationDetailPage() {
               ‹ Back to my applications
             </button>
 
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+              <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl font-black" style={{ color: "#3D2B1F" }}>
                   Application for {application.petName}
                 </h1>
@@ -168,7 +168,7 @@ export default function ApplicationDetailPage() {
               </div>
               <button
                 onClick={() => navigate(`/messages?with=${application.ownerId}&pet=${encodeURIComponent(application.petName)}`)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white shrink-0"
                 style={{ backgroundColor: "#F5A623" }}
               >
                 💬 Chat owner
@@ -179,9 +179,9 @@ export default function ApplicationDetailPage() {
               {shelterName} · Submitted {timeAgo(application.createdAt)}
             </p>
 
-            <div className="flex gap-6">
+            <div className="flex flex-col lg:flex-row gap-6">
               {/* Left column */}
-              <div className="flex flex-col gap-4" style={{ width: 360 }}>
+              <div className="flex flex-col gap-4 w-full lg:w-[360px]">
 
                 {/* Pet photo */}
                 <div

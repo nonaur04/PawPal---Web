@@ -113,6 +113,7 @@ export default function MessagesPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userName, setUserName] = useState("");
   const [activeChat, setActiveChat] = useState("ai");
+  const [mobileView, setMobileView] = useState("list"); // "list" | "chat" — only affects < lg
   const [aiMessages, setAiMessages] = useState(AI_INITIAL_MESSAGES);
   const [aiInput, setAiInput] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -224,6 +225,7 @@ export default function MessagesPage() {
       petName: petName || chatSnap.data()?.petName,
     });
     setActiveChat("user_" + chatId);
+    setMobileView("chat");
   };
 
   const sendChatMessage = async () => {
@@ -291,14 +293,15 @@ export default function MessagesPage() {
       <Sidebar userName={userName} />
       <div className="flex-1 flex min-w-0 overflow-hidden">
 
-        {/* Contacts list */}
-        <div className="flex flex-col shrink-0 overflow-hidden" style={{ width: 300, backgroundColor: "white", borderRight: "1px solid #EEE8E0" }}>
+        {/* Contacts list — full width on mobile, hidden when a thread is open */}
+        <div className={`${mobileView === "chat" ? "hidden" : "flex"} lg:flex flex-col w-full lg:w-[300px] lg:shrink-0 overflow-hidden`}
+          style={{ backgroundColor: "white", borderRight: "1px solid #EEE8E0" }}>
           <div className="px-5 py-4" style={{ borderBottom: "1px solid #EEE8E0" }}>
             <h2 className="text-xl font-black" style={{ color: "#3D2B1F" }}>Messages</h2>
           </div>
           <div className="flex-1 overflow-y-auto">
             {/* AI Assistant */}
-            <button onClick={() => setActiveChat("ai")} className="w-full flex items-center gap-3 px-4 py-4 text-left transition"
+            <button onClick={() => { setActiveChat("ai"); setMobileView("chat"); }} className="w-full flex items-center gap-3 px-4 py-4 text-left transition"
               style={{ backgroundColor: activeChat === "ai" ? "#FFF3E0" : "transparent", borderBottom: "1px solid #F5F2EE" }}>
               <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-xl" style={{ backgroundColor: "#F5A623" }}>✨</div>
               <div className="flex-1 min-w-0">
@@ -346,155 +349,161 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        {/* AI Chat */}
-        {activeChat === "ai" && (
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-            <div className="flex items-center gap-3 px-6 py-4 bg-white" style={{ borderBottom: "1px solid #EEE8E0" }}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ backgroundColor: "#F5A623" }}>✨</div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-black text-sm" style={{ color: "#3D2B1F" }}>PawPal Assistant</p>
-                  <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#F5A623", color: "white" }}>AI</span>
+        {/* Thread pane — full screen on mobile, hidden while viewing the list */}
+        <div className={`${mobileView === "list" ? "hidden lg:flex" : "flex"} flex-1 min-w-0 overflow-hidden`}>
+
+          {/* AI Chat */}
+          {activeChat === "ai" && (
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+              <div className="flex items-center gap-3 px-4 sm:px-6 py-4 bg-white" style={{ borderBottom: "1px solid #EEE8E0" }}>
+                <button onClick={() => setMobileView("list")} aria-label="Back" className="lg:hidden -ml-1 p-1 rounded-lg" style={{ color: "#6B5E52" }}>‹</button>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ backgroundColor: "#F5A623" }}>✨</div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-black text-sm" style={{ color: "#3D2B1F" }}>PawPal Assistant</p>
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#F5A623", color: "white" }}>AI</span>
+                  </div>
+                  <p className="text-xs" style={{ color: "#16A34A" }}>Always online</p>
                 </div>
-                <p className="text-xs" style={{ color: "#16A34A" }}>Always online</p>
               </div>
-            </div>
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-              {aiMessages.map((msg, i) => {
-                const navBtns = msg.role === "assistant" ? detectNavButtons(msg.content) : [];
-                const petMatches = msg.petMatches ?? [];
-                return (
-                  <div key={i} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                    <div className="max-w-lg px-4 py-3 rounded-2xl text-sm leading-relaxed"
-                      style={{ backgroundColor: msg.role === "user" ? "#F5A623" : "white", color: msg.role === "user" ? "white" : "#3D2B1F", border: msg.role === "assistant" ? "1px solid #EEE8E0" : "none", borderRadius: msg.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px" }}>
-                      {msg.content}
+              <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-3">
+                {aiMessages.map((msg, i) => {
+                  const navBtns = msg.role === "assistant" ? detectNavButtons(msg.content) : [];
+                  const petMatches = msg.petMatches ?? [];
+                  return (
+                    <div key={i} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
+                      <div className="max-w-lg px-4 py-3 rounded-2xl text-sm leading-relaxed"
+                        style={{ backgroundColor: msg.role === "user" ? "#F5A623" : "white", color: msg.role === "user" ? "white" : "#3D2B1F", border: msg.role === "assistant" ? "1px solid #EEE8E0" : "none", borderRadius: msg.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px" }}>
+                        {msg.content}
+                      </div>
+                      {petMatches.length > 0 && (
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                          {petMatches.map((pet) => (
+                            <button key={pet.id} onClick={() => navigate(`/pet/${pet.id}`)}
+                              className="text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1"
+                              style={{ backgroundColor: "#F5A623", color: "white" }}>
+                              🐾 View {pet.name}'s profile
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {navBtns.length > 0 && petMatches.length === 0 && (
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                          {navBtns.map((btn) => (
+                            <button key={btn.label} onClick={() => navigate(btn.path)}
+                              className="text-xs font-bold px-3 py-1.5 rounded-full"
+                              style={{ backgroundColor: "white", border: "1.5px solid #F5A623", color: "#F5A623" }}>
+                              → {btn.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    {petMatches.length > 0 && (
-                      <div className="flex gap-2 mt-2 flex-wrap">
-                        {petMatches.map((pet) => (
-                          <button key={pet.id} onClick={() => navigate(`/pet/${pet.id}`)}
-                            className="text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1"
-                            style={{ backgroundColor: "#F5A623", color: "white" }}>
-                            🐾 View {pet.name}'s profile
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {navBtns.length > 0 && petMatches.length === 0 && (
-                      <div className="flex gap-2 mt-2 flex-wrap">
-                        {navBtns.map((btn) => (
-                          <button key={btn.label} onClick={() => navigate(btn.path)}
-                            className="text-xs font-bold px-3 py-1.5 rounded-full"
-                            style={{ backgroundColor: "white", border: "1.5px solid #F5A623", color: "#F5A623" }}>
-                            → {btn.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                  );
+                })}
+                {aiLoading && (
+                  <div className="flex justify-start">
+                    <div className="px-4 py-3 rounded-2xl text-sm" style={{ backgroundColor: "white", border: "1px solid #EEE8E0", borderRadius: "18px 18px 18px 4px" }}>
+                      <span style={{ color: "#9B8778" }}>✨ Thinking...</span>
+                    </div>
                   </div>
-                );
-              })}
-              {aiLoading && (
-                <div className="flex justify-start">
-                  <div className="px-4 py-3 rounded-2xl text-sm" style={{ backgroundColor: "white", border: "1px solid #EEE8E0", borderRadius: "18px 18px 18px 4px" }}>
-                    <span style={{ color: "#9B8778" }}>✨ Thinking...</span>
-                  </div>
-                </div>
-              )}
-              <div ref={bottomRef} />
-            </div>
-            <div className="px-6 pb-3 flex gap-2 flex-wrap">
-              {QUICK_PROMPTS.map((p) => (
-                <button key={p} onClick={() => sendAiMessage(p)}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-full"
-                  style={{ backgroundColor: "white", border: "1.5px solid #F5A623", color: "#F5A623" }}>
-                  {p}
-                </button>
-              ))}
-            </div>
-            <div className="px-6 pb-6">
-              <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white" style={{ border: "1.5px solid #EEE8E0" }}>
-                <input value={aiInput} onChange={(e) => setAiInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendAiMessage(aiInput); } }}
-                  placeholder="Ask me anything about pets..."
-                  className="flex-1 text-sm outline-none bg-transparent" style={{ fontFamily: "'Nunito', sans-serif", color: "#3D2B1F" }} />
-                <button onClick={() => sendAiMessage(aiInput)} disabled={!aiInput.trim() || aiLoading}
-                  className="px-4 py-2 rounded-xl text-sm font-bold text-white shrink-0"
-                  style={{ backgroundColor: aiInput.trim() && !aiLoading ? "#F5A623" : "#F8C97A" }}>
-                  ➤ Send
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* User-to-user chat */}
-        {activeChat.startsWith("user_") && activeChatData && (
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center gap-3 px-6 py-4 bg-white" style={{ borderBottom: "1px solid #EEE8E0" }}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-black" style={{ backgroundColor: "#F5EFE6", color: "#F5A623" }}>
-                {(activeChatData.otherUser?.orgName || activeChatData.otherUser?.shelterName || activeChatData.otherUser?.name || activeChatData.otherUser?.fullName || activeChatData.otherUser?.displayName || "U").charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <p className="font-black text-sm" style={{ color: "#3D2B1F" }}>
-                  {activeChatData.otherUser?.orgName || activeChatData.otherUser?.shelterName || activeChatData.otherUser?.name || activeChatData.otherUser?.fullName || activeChatData.otherUser?.displayName || "User"}
-                </p>
-                {activeChatData.petName && (
-                  <p className="text-xs" style={{ color: "#9B8778" }}>About: {activeChatData.petName}</p>
                 )}
+                <div ref={bottomRef} />
+              </div>
+              <div className="px-4 sm:px-6 pb-3 flex gap-2 flex-wrap">
+                {QUICK_PROMPTS.map((p) => (
+                  <button key={p} onClick={() => sendAiMessage(p)}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-full"
+                    style={{ backgroundColor: "white", border: "1.5px solid #F5A623", color: "#F5A623" }}>
+                    {p}
+                  </button>
+                ))}
+              </div>
+              <div className="px-4 sm:px-6 pb-6">
+                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white" style={{ border: "1.5px solid #EEE8E0" }}>
+                  <input value={aiInput} onChange={(e) => setAiInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendAiMessage(aiInput); } }}
+                    placeholder="Ask me anything about pets..."
+                    className="flex-1 text-sm outline-none bg-transparent min-w-0" style={{ fontFamily: "'Nunito', sans-serif", color: "#3D2B1F" }} />
+                  <button onClick={() => sendAiMessage(aiInput)} disabled={!aiInput.trim() || aiLoading}
+                    className="px-4 py-2 rounded-xl text-sm font-bold text-white shrink-0"
+                    style={{ backgroundColor: aiInput.trim() && !aiLoading ? "#F5A623" : "#F8C97A" }}>
+                    ➤ Send
+                  </button>
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-              {chatMessages.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-full">
-                  <p className="text-3xl mb-2">💬</p>
-                  <p className="text-sm font-semibold" style={{ color: "#9B8778" }}>Start the conversation!</p>
+          {/* User-to-user chat */}
+          {activeChat.startsWith("user_") && activeChatData && (
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center gap-3 px-4 sm:px-6 py-4 bg-white" style={{ borderBottom: "1px solid #EEE8E0" }}>
+                <button onClick={() => setMobileView("list")} aria-label="Back" className="lg:hidden -ml-1 p-1 rounded-lg" style={{ color: "#6B5E52" }}>‹</button>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-black" style={{ backgroundColor: "#F5EFE6", color: "#F5A623" }}>
+                  {(activeChatData.otherUser?.orgName || activeChatData.otherUser?.shelterName || activeChatData.otherUser?.name || activeChatData.otherUser?.fullName || activeChatData.otherUser?.displayName || "U").charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-black text-sm" style={{ color: "#3D2B1F" }}>
+                    {activeChatData.otherUser?.orgName || activeChatData.otherUser?.shelterName || activeChatData.otherUser?.name || activeChatData.otherUser?.fullName || activeChatData.otherUser?.displayName || "User"}
+                  </p>
                   {activeChatData.petName && (
-                    <p className="text-xs mt-1" style={{ color: "#B0A090" }}>about {activeChatData.petName}</p>
+                    <p className="text-xs" style={{ color: "#9B8778" }}>About: {activeChatData.petName}</p>
                   )}
                 </div>
-              )}
-              {chatMessages.map((msg) => {
-                const isMe = msg.senderId === currentUser?.uid;
-                return (
-                  <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                    <div className="max-w-lg px-4 py-3 rounded-2xl text-sm leading-relaxed"
-                      style={{ backgroundColor: isMe ? "#F5A623" : "white", color: isMe ? "white" : "#3D2B1F", border: !isMe ? "1px solid #EEE8E0" : "none", borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px" }}>
-                      {msg.text}
-                    </div>
-                  </div>
-                );
-              })}
-              <div ref={chatBottomRef} />
-            </div>
+              </div>
 
-            {/* Input */}
-            <div className="px-6 pb-6">
-              <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white" style={{ border: "1.5px solid #EEE8E0" }}>
-                <input value={chatInput} onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
-                  placeholder="Type a message..."
-                  className="flex-1 text-sm outline-none bg-transparent" style={{ fontFamily: "'Nunito', sans-serif", color: "#3D2B1F" }} />
-                <button onClick={sendChatMessage} disabled={!chatInput.trim() || sendingMsg}
-                  className="px-4 py-2 rounded-xl text-sm font-bold text-white shrink-0"
-                  style={{ backgroundColor: chatInput.trim() && !sendingMsg ? "#F5A623" : "#F8C97A" }}>
-                  ➤ Send
-                </button>
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-3">
+                {chatMessages.length === 0 && (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <p className="text-3xl mb-2">💬</p>
+                    <p className="text-sm font-semibold" style={{ color: "#9B8778" }}>Start the conversation!</p>
+                    {activeChatData.petName && (
+                      <p className="text-xs mt-1" style={{ color: "#B0A090" }}>about {activeChatData.petName}</p>
+                    )}
+                  </div>
+                )}
+                {chatMessages.map((msg) => {
+                  const isMe = msg.senderId === currentUser?.uid;
+                  return (
+                    <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                      <div className="max-w-lg px-4 py-3 rounded-2xl text-sm leading-relaxed"
+                        style={{ backgroundColor: isMe ? "#F5A623" : "white", color: isMe ? "white" : "#3D2B1F", border: !isMe ? "1px solid #EEE8E0" : "none", borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px" }}>
+                        {msg.text}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={chatBottomRef} />
+              </div>
+
+              {/* Input */}
+              <div className="px-4 sm:px-6 pb-6">
+                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white" style={{ border: "1.5px solid #EEE8E0" }}>
+                  <input value={chatInput} onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
+                    placeholder="Type a message..."
+                    className="flex-1 text-sm outline-none bg-transparent min-w-0" style={{ fontFamily: "'Nunito', sans-serif", color: "#3D2B1F" }} />
+                  <button onClick={sendChatMessage} disabled={!chatInput.trim() || sendingMsg}
+                    className="px-4 py-2 rounded-xl text-sm font-bold text-white shrink-0"
+                    style={{ backgroundColor: chatInput.trim() && !sendingMsg ? "#F5A623" : "#F8C97A" }}>
+                    ➤ Send
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* No chat selected */}
-        {!activeChat.startsWith("user_") && activeChat !== "ai" && (
-          <div className="flex-1 flex flex-col items-center justify-center" style={{ backgroundColor: "#F5F2EE" }}>
-            <p className="text-4xl mb-3">💬</p>
-            <p className="font-black text-lg mb-1" style={{ color: "#3D2B1F" }}>Select a conversation</p>
-          </div>
-        )}
+          {/* No chat selected */}
+          {!activeChat.startsWith("user_") && activeChat !== "ai" && (
+            <div className="flex-1 flex flex-col items-center justify-center" style={{ backgroundColor: "#F5F2EE" }}>
+              <p className="text-4xl mb-3">💬</p>
+              <p className="font-black text-lg mb-1" style={{ color: "#3D2B1F" }}>Select a conversation</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

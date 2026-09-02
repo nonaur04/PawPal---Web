@@ -67,7 +67,7 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center bg-white px-10 py-12">
+    <div className="flex-1 flex items-center justify-center bg-white px-6 sm:px-10 py-12">
       <div className="w-full max-w-sm">
 
         {/* Heading */}

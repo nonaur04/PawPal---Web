@@ -75,7 +75,6 @@ export default function MyApplicationsPage() {
         setSentApps(sent);
         setReceivedApps(received);
 
-        // Fetch pets
         const petIds = [...new Set([...sent, ...received].map((a) => a.petId).filter(Boolean))];
         const userIds = [...new Set([...sent.map((a) => a.ownerId), ...received.map((a) => a.applicantId)].filter(Boolean))];
         const petsSnap = await getDocs(collection(db, "pets"));
@@ -102,27 +101,29 @@ export default function MyApplicationsPage() {
       <Sidebar userName={userName} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
             <h1 className="text-2xl font-black mb-1" style={{ color: "#3D2B1F" }}>Applications</h1>
             <p className="text-sm mb-5" style={{ color: "#9B8778" }}>
               {activeTab === "sent" ? "Track the adoption applications you submitted and their AI scores" : "Review and approve people who applied to adopt the pets you listed"}
             </p>
 
-            {/* Tabs */}
-            <div className="mb-6" style={{ display: "inline-flex", padding: 4, borderRadius: 16, backgroundColor: "#EEEBE6" }}>
-              {tabs.map((tab) => (
-                <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                  className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold transition"
-                  style={{ borderRadius: 12, backgroundColor: activeTab === tab.key ? "white" : "transparent", color: activeTab === tab.key ? "#F5A623" : "#9B8778", boxShadow: activeTab === tab.key ? "0 1px 4px rgba(0,0,0,0.08)" : "none" }}>
-                  {tab.label}
-                  <span className="text-xs font-black px-1.5 py-0.5 rounded-full"
-                    style={{ backgroundColor: activeTab === tab.key ? "#FFF3E0" : "rgba(0,0,0,0.06)", color: activeTab === tab.key ? "#F5A623" : "#9B8778" }}>
-                    {tab.count}
-                  </span>
-                  {tab.dot && <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#F5A623" }} />}
-                </button>
-              ))}
+            {/* Tabs — horizontally scrollable if they don't fit */}
+            <div className="mb-6 overflow-x-auto">
+              <div style={{ display: "inline-flex", padding: 4, borderRadius: 16, backgroundColor: "#EEEBE6" }}>
+                {tabs.map((tab) => (
+                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                    className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold transition whitespace-nowrap"
+                    style={{ borderRadius: 12, backgroundColor: activeTab === tab.key ? "white" : "transparent", color: activeTab === tab.key ? "#F5A623" : "#9B8778", boxShadow: activeTab === tab.key ? "0 1px 4px rgba(0,0,0,0.08)" : "none" }}>
+                    {tab.label}
+                    <span className="text-xs font-black px-1.5 py-0.5 rounded-full"
+                      style={{ backgroundColor: activeTab === tab.key ? "#FFF3E0" : "rgba(0,0,0,0.06)", color: activeTab === tab.key ? "#F5A623" : "#9B8778" }}>
+                      {tab.count}
+                    </span>
+                    {tab.dot && <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#F5A623" }} />}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Sent applications */}
@@ -146,7 +147,7 @@ export default function MyApplicationsPage() {
                       const bg = SPECIES_BG[pet?.species?.toLowerCase()] ?? "#F9BFBF";
                       const emoji = SPECIES_EMOJI[pet?.species?.toLowerCase()] ?? "🐾";
                       return (
-                        <div key={app.id} className="flex items-center gap-4 p-4 rounded-2xl"
+                        <div key={app.id} className="flex flex-wrap items-center gap-3 sm:gap-4 p-4 rounded-2xl"
                           style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                           <div className="rounded-xl overflow-hidden shrink-0 flex items-center justify-center"
                             style={{ width: 60, height: 60, backgroundColor: bg, backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,0.18) 6px, rgba(255,255,255,0.18) 12px)" }}>
@@ -156,7 +157,7 @@ export default function MyApplicationsPage() {
                             <p className="font-black text-base" style={{ color: "#3D2B1F" }}>{app.petName}</p>
                             <p className="text-xs" style={{ color: "#9B8778" }}>{ownerName} · Submitted {timeAgo(app.createdAt)}</p>
                           </div>
-                          <div className="flex items-center gap-3 shrink-0">
+                          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-start sm:justify-end">
                             <div className="text-right mr-1">
                               <p className="text-xs" style={{ color: "#9B8778" }}>AI Score</p>
                               <ScoreRing score={app.aiScore ?? 0} size={52} />
@@ -223,7 +224,7 @@ function ReceivedAppRow({ app, petMap, userMap, onReview }) {
   const emoji = SPECIES_EMOJI[pet?.species?.toLowerCase()] ?? "🐾";
 
   return (
-    <div className="flex items-center gap-4 p-4 rounded-2xl" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
+    <div className="flex flex-wrap items-center gap-3 sm:gap-4 p-4 rounded-2xl" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
       {/* Avatar */}
       <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: "#FFF3E0" }}>
         👤
@@ -236,7 +237,7 @@ function ReceivedAppRow({ app, petMap, userMap, onReview }) {
         </p>
       </div>
       {/* Score + actions */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-start sm:justify-end">
         <div className="text-right">
           <p className="text-xs mb-0.5" style={{ color: "#9B8778" }}>AI Score</p>
           <ScoreRing score={app.aiScore ?? 0} size={52} />

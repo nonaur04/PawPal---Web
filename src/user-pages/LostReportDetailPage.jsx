@@ -84,15 +84,15 @@ export default function LostReportDetailPage() {
       <Sidebar userName={userName} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
             <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-semibold mb-5" style={{ color: "#6B5E52" }}>
               ‹ Back to Reports
             </button>
 
-            <div className="flex gap-8">
+            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
               {/* Left: photos + location */}
-              <div className="flex flex-col gap-4" style={{ width: 440 }}>
+              <div className="flex flex-col gap-4 w-full lg:w-[440px]">
                 {/* Main photo */}
                 <div className="rounded-2xl overflow-hidden flex items-center justify-center relative"
                   style={{ height: 360, backgroundColor: bg, backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.18) 10px, rgba(255,255,255,0.18) 20px)" }}>
@@ -145,9 +145,9 @@ export default function LostReportDetailPage() {
               {/* Right: details */}
               <div className="flex-1 min-w-0">
                 {/* Name + status */}
-                <div className="flex items-start justify-between mb-1">
+                <div className="flex items-start justify-between gap-3 mb-1">
                   <h1 className="text-3xl font-black" style={{ color: "#3D2B1F" }}>{report.petName || report.name}</h1>
-                  <span className="text-sm font-bold px-3 py-1.5 rounded-full"
+                  <span className="text-sm font-bold px-3 py-1.5 rounded-full shrink-0"
                     style={{ backgroundColor: isReunited ? "#DCFCE7" : "#FEE2E2", color: isReunited ? "#16A34A" : "#EF4444" }}>
                     {isReunited ? "Reunited 🎉" : "Lost"}
                   </span>
@@ -165,7 +165,7 @@ export default function LostReportDetailPage() {
                 {/* About grid */}
                 <div className="mb-5">
                   <h3 className="font-black mb-3" style={{ color: "#3D2B1F" }}>About {report.petName || report.name}</h3>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {[
                       { label: "Species", value: report.species ? report.species.charAt(0).toUpperCase() + report.species.slice(1) : "—" },
                       { label: "Breed", value: report.breed || "—" },

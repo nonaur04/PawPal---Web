@@ -117,7 +117,6 @@ export default function PostPetPage() {
     setSubmitting(true);
 
     try {
-      // Upload photos
       const photoUrls = [];
       for (const file of photoFiles) {
         if (!file) continue;
@@ -160,11 +159,11 @@ export default function PostPetPage() {
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
 
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div>
                 <button
                   onClick={() => navigate(-1)}
@@ -180,7 +179,7 @@ export default function PostPetPage() {
                 <button
                   onClick={() => handleSubmit("draft")}
                   disabled={submitting}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold transition"
+                  className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-sm font-bold transition"
                   style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}
                 >
                   Save draft
@@ -188,7 +187,7 @@ export default function PostPetPage() {
                 <button
                   onClick={() => handleSubmit("available")}
                   disabled={submitting}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition"
+                  className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-sm font-bold text-white transition"
                   style={{ backgroundColor: submitting ? "#F8C97A" : "#F5A623" }}
                 >
                   {submitting ? "Posting..." : "Post for adoption"}
@@ -202,14 +201,14 @@ export default function PostPetPage() {
               </div>
             )}
 
-            <div className="flex gap-6 max-w-5xl">
+            <div className="flex flex-col lg:flex-row gap-6 max-w-5xl">
               {/* Left column */}
               <div className="flex-1 space-y-5">
 
                 {/* Photos */}
                 <div className="rounded-2xl p-5" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                   <p className="font-black mb-4" style={{ color: "#3D2B1F" }}>Photos</p>
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 flex-wrap">
                     {/* Main photo */}
                     <label className="cursor-pointer relative rounded-xl overflow-hidden flex items-center justify-center flex-col gap-2"
                       style={{ width: 180, height: 180, backgroundColor: "#F5F2EE", border: "1.5px dashed #D1C9C0", backgroundImage: photos[0] ? "none" : "repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(180,160,130,0.08) 8px, rgba(180,160,130,0.08) 16px)" }}>
@@ -366,7 +365,7 @@ export default function PostPetPage() {
               </div>
 
               {/* Right column */}
-              <div className="w-80 space-y-5">
+              <div className="w-full lg:w-80 space-y-5">
 
                 {/* Health */}
                 <div className="rounded-2xl p-5" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
