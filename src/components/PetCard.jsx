@@ -2,14 +2,14 @@ import { useNavigate } from "react-router-dom";
 
 const GENDER_ICON = { male: "♂", female: "♀" };
 
-export default function PetCard({ pet }) {
+export default function PetCard({ pet, fluid = false }) {
   const navigate = useNavigate();
 
   return (
     <div
       onClick={() => navigate(`/pet/${pet.id}`)}
-      className="rounded-2xl overflow-hidden shrink-0 cursor-pointer transition hover:scale-[1.02]"
-      style={{ width: 210, backgroundColor: "white", border: "1px solid #EEE8E0" }}
+      className={`rounded-2xl overflow-hidden cursor-pointer transition hover:scale-[1.02] ${fluid ? "w-full" : "shrink-0"}`}
+      style={{ width: fluid ? undefined : 210, backgroundColor: "white", border: "1px solid #EEE8E0" }}
     >
       <div
         className="relative flex items-center justify-center"

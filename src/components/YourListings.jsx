@@ -17,13 +17,13 @@ export default function YourListings({ listings }) {
         </button>
       </div>
 
-      <div className="flex gap-4 mt-4 flex-wrap">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mt-4">
         {listings.map((pet) => (
           <div
             key={pet.id}
             onClick={() => navigate(`/my-pet/${pet.id}`)}
-            className="rounded-2xl overflow-hidden cursor-pointer transition hover:scale-[1.02]"
-            style={{ width: 210, backgroundColor: "white", border: "1px solid #EEE8E0" }}
+            className="w-full rounded-2xl overflow-hidden cursor-pointer transition hover:scale-[1.02]"
+            style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}
           >
             <div
               className="relative flex items-center justify-center"
@@ -60,8 +60,8 @@ export default function YourListings({ listings }) {
         {/* Post another pet */}
         <div
           onClick={() => navigate("/post-pet")}
-          className="rounded-2xl flex flex-col items-center justify-center cursor-pointer transition hover:scale-[1.02]"
-          style={{ width: 210, height: 240, backgroundColor: "white", border: "1.5px dashed #F5A623" }}
+          className="w-full rounded-2xl flex flex-col items-center justify-center cursor-pointer transition hover:scale-[1.02]"
+          style={{ minHeight: 240, backgroundColor: "white", border: "1.5px dashed #F5A623" }}
         >
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-3"

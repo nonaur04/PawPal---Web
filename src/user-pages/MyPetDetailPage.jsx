@@ -33,7 +33,6 @@ export default function MyPetDetailPage() {
         if (!petDoc.exists()) return;
         setPet({ id: petDoc.id, ...petDoc.data() });
 
-        // Count applications
         const appSnap = await getDocs(query(collection(db, "applications"), where("petId", "==", id)));
         setApplicantCount(appSnap.size);
       } catch (err) {
@@ -85,7 +84,7 @@ export default function MyPetDetailPage() {
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
 
             {/* Back */}
@@ -98,9 +97,9 @@ export default function MyPetDetailPage() {
             </button>
 
             {/* Header */}
-            <div className="flex items-start justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
               <div>
-                <div className="flex items-center gap-3 mb-1">
+                <div className="flex items-center gap-3 mb-1 flex-wrap">
                   <h1 className="text-3xl font-black" style={{ color: "#3D2B1F" }}>{pet.name}</h1>
                   <span className="text-lg" style={{ color: "#9B8778" }}>{pet.gender === "female" ? "♀" : "♂"}</span>
                   <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: isAdopted ? "#F5F2EE" : "#DCFCE7", color: isAdopted ? "#9B8778" : "#16A34A" }}>
@@ -117,14 +116,14 @@ export default function MyPetDetailPage() {
               <div className="flex gap-3">
                 <button
                   onClick={() => navigate(`/review-applicant/${id}`)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition"
                   style={{ backgroundColor: "white", border: "1.5px solid #EEE8E0", color: "#6B5E52" }}
                 >
                   📋 {applicantCount} applicants
                 </button>
                 <button
                   onClick={() => navigate(`/edit-pet/${id}`)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition"
                   style={{ backgroundColor: "#F5A623" }}
                 >
                   ✏️ Edit listing
@@ -133,10 +132,10 @@ export default function MyPetDetailPage() {
             </div>
 
             {/* Content */}
-            <div className="flex gap-6">
+            <div className="flex flex-col lg:flex-row gap-6">
 
               {/* Left */}
-              <div className="flex flex-col gap-4" style={{ width: 440 }}>
+              <div className="flex flex-col gap-4 w-full lg:w-[440px]">
                 {/* Main photo */}
                 <div
                   className="rounded-2xl overflow-hidden flex items-center justify-center"
@@ -185,7 +184,7 @@ export default function MyPetDetailPage() {
                 {/* Engagement */}
                 <div className="rounded-2xl p-5" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                   <h3 className="font-black mb-4" style={{ color: "#3D2B1F" }}>Engagement</h3>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {[
                       { icon: "🐾", value: applicantCount, label: "Applicants" },
                       { icon: "👀", value: pet.views ?? 0, label: "Views" },
@@ -229,7 +228,7 @@ export default function MyPetDetailPage() {
                 {/* Mark adopted */}
                 {!isAdopted && (
                   <div
-                    className="rounded-2xl p-5 flex items-center justify-between"
+                    className="rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                     style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}
                   >
                     <div>
@@ -239,7 +238,7 @@ export default function MyPetDetailPage() {
                     <button
                       onClick={handleMarkAdopted}
                       disabled={marking}
-                      className="px-4 py-2.5 rounded-xl text-sm font-bold transition"
+                      className="px-4 py-2.5 rounded-xl text-sm font-bold transition shrink-0"
                       style={{ border: "1.5px solid #EEE8E0", color: "#6B5E52", backgroundColor: "white" }}
                     >
                       {marking ? "Saving..." : "Mark adopted"}
@@ -261,7 +260,7 @@ export default function MyPetDetailPage() {
                 )}
               </div>
             </div>
-           </div> 
+           </div>
         </main>
       </div>
     </div>

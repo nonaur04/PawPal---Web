@@ -3,7 +3,7 @@ export default function BrandingPanel({ variant = "login" }) {
 
   return (
     <div
-      className="flex w-3/5 relative overflow-hidden flex-col justify-between p-10"
+      className="hidden lg:flex w-3/5 relative overflow-hidden flex-col justify-between p-10"
       style={{ backgroundColor: "#FDF3E7" }}
     >
       {/* Decorative paw prints */}

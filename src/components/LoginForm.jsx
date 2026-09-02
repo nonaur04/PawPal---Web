@@ -3,6 +3,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebase/firebase";
 import { useNavigate } from "react-router-dom";
+import { isAdmin } from "../auth-pages/adminConfig";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -24,6 +25,13 @@ export default function LoginForm() {
     setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+      // Admin is decided purely by email — no Firestore role needed
+      if (isAdmin(userCredential.user.email)) {
+        navigate("/admin");
+        return;
+      }
+
       const uid = userCredential.user.uid;
 
       // Fetch role from Firestore
@@ -59,7 +67,7 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center bg-white px-10 py-12">
+    <div className="flex-1 flex items-center justify-center bg-white px-6 sm:px-10 py-12">
       <div className="w-full max-w-sm">
 
         {/* Heading */}

@@ -48,6 +48,12 @@ import ShelterVetNearMePage from "./shelter-pages/ShelterVetNearMePage";
 import ShelterMessagesPage from "./shelter-pages/ShelterMessagesPage";
 import ShelterProfilePage from "./shelter-pages/ShelterProfilePage";
 import ShelterSettingsPage from "./shelter-pages/ShelterSettingsPage";
+import ShelterVerificationPage from "./shelter-pages/ShelterVerificationPage";
+
+// Admin
+import AdminOverviewPage from "./admin-pages/AdminOverviewPage";
+import AdminShelterVerificationPage from "./admin-pages/AdminShelterVerificationPage";
+import AdminShelterVerificationDetailPage from "./admin-pages/AdminShelterVerificationDetailPage";
 
 function App() {
   return (
@@ -101,6 +107,11 @@ function App() {
       <Route path="/shelter/messages" element={<ShelterMessagesPage />} />
       <Route path="/shelter/profile" element={<ShelterProfilePage />} />
       <Route path="/shelter/settings" element={<ShelterSettingsPage />} />
+
+      // Admin
+      <Route path="/admin" element={<AdminOverviewPage />} />
+      <Route path="/admin/verification" element={<AdminShelterVerificationPage />} />
+      <Route path="/admin/verification/:id" element={<AdminShelterVerificationDetailPage />} />
     </Routes>
   );
 }

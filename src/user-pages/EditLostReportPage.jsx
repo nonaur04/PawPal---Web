@@ -139,7 +139,7 @@ export default function EditLostReportPage() {
       <Sidebar userName={userName} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
 
             <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm font-semibold mb-4" style={{ color: "#6B5E52" }}>
@@ -152,14 +152,14 @@ export default function EditLostReportPage() {
             <div className="rounded-2xl p-5 mb-4" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
               <p className="font-black mb-1" style={{ color: "#3D2B1F" }}>Photos of your pet</p>
               <p className="text-xs mb-3" style={{ color: "#9B8778" }}>First photo is required. Second is optional.</p>
-              <div className="flex gap-3">
-                <label className="cursor-pointer rounded-xl overflow-hidden flex items-center justify-center flex-col gap-2"
-                  style={{ width: 280, height: 180, flexShrink: 0, backgroundColor: "#F5EFE6", backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(180,150,100,0.07) 10px, rgba(180,150,100,0.07) 20px)", border: "1.5px dashed #D1C9C0" }}>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <label className="cursor-pointer rounded-xl overflow-hidden flex items-center justify-center flex-col gap-2 w-full sm:w-[280px]"
+                  style={{ height: 180, backgroundColor: "#F5EFE6", backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(180,150,100,0.07) 10px, rgba(180,150,100,0.07) 20px)", border: "1.5px dashed #D1C9C0" }}>
                   {photo ? <img src={photo} alt="main" className="w-full h-full object-cover" /> : <><span className="text-2xl" style={{ color: "#B0A090" }}>📷</span><span className="text-xs font-semibold" style={{ color: "#B0A090" }}>Main photo</span></>}
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoChange(0, e.target.files[0])} />
                 </label>
-                <label className="cursor-pointer rounded-xl overflow-hidden flex items-center justify-center flex-col gap-2"
-                  style={{ width: 180, height: 180, flexShrink: 0, backgroundColor: "#F5EFE6", backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(180,150,100,0.07) 10px, rgba(180,150,100,0.07) 20px)", border: "1.5px dashed #D1C9C0" }}>
+                <label className="cursor-pointer rounded-xl overflow-hidden flex items-center justify-center flex-col gap-2 w-full sm:w-[180px]"
+                  style={{ height: 180, backgroundColor: "#F5EFE6", backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(180,150,100,0.07) 10px, rgba(180,150,100,0.07) 20px)", border: "1.5px dashed #D1C9C0" }}>
                   {photo2 ? <img src={photo2} alt="extra" className="w-full h-full object-cover" /> : <><span className="text-xl" style={{ color: "#B0A090" }}>+</span><span className="text-xs font-semibold" style={{ color: "#B0A090" }}>Optional</span></>}
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoChange(1, e.target.files[0])} />
                 </label>
@@ -167,7 +167,7 @@ export default function EditLostReportPage() {
             </div>
 
             {/* Map + Pet details */}
-            <div className="flex gap-4 mb-4">
+            <div className="flex flex-col lg:flex-row gap-4 mb-4">
               {/* Map */}
               <div className="rounded-2xl p-5 flex-1" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                 <p className="font-black mb-3 flex items-center gap-2" style={{ color: "#3D2B1F" }}>

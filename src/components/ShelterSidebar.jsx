@@ -6,8 +6,9 @@ const NAV = [
   { icon: "📋", label: "Applications", path: "/shelter/applications" },
   { icon: "⚠️", label: "Stray Reports", path: "/shelter/stray-reports" },
   { icon: "🔍", label: "Lost Pets", path: "/shelter/lost-pets" },
-  { icon: "🩺", label: "Vet Near Me", path: "/shelter/vet-near-me" },
   { icon: "💬", label: "Messages", path: "/shelter/messages" },
+  { icon: "🩺", label: "Vet Near Me", path: "/shelter/vet-near-me" },
+  { icon: "🔐", label: "Verification", path: "/shelter/verification" },
 ];
 
 export default function ShelterSidebar({ orgName }) {

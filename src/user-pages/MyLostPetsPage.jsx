@@ -84,7 +84,7 @@ export default function MyLostPetsPage() {
       <Sidebar userName={userName} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
             <button onClick={() => navigate("/reports")} className="flex items-center gap-1 text-sm font-semibold mb-4" style={{ color: "#6B5E52" }}>‹ Back to Reports</button>
             <div className="flex items-center gap-3 mb-1">
@@ -92,7 +92,7 @@ export default function MyLostPetsPage() {
               <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#FFF3E0", color: "#F5A623" }}>You</span>
             </div>
             <p className="text-sm mb-6" style={{ color: "#9B8778" }}>Every lost pet you've posted to the community</p>
-            <div className="grid grid-cols-3 gap-4 mb-6 max-w-2xl">
+            <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 max-w-2xl">
               {[{ value: reports.length, label: "Posted" }, { value: searching.length, label: "Searching" }, { value: reunited.length, label: "Reunited" }].map((s) => (
                 <div key={s.label} className="rounded-2xl p-5 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                   <p className="text-3xl font-black mb-1" style={{ color: "#F5A623" }}>{s.value}</p>
@@ -101,7 +101,7 @@ export default function MyLostPetsPage() {
               ))}
             </div>
             {loading ? (
-              <div className="grid grid-cols-3 gap-4">{[1,2,3].map((i) => <div key={i} className="rounded-2xl animate-pulse" style={{ height: 340, backgroundColor: "white" }} />)}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{[1,2,3].map((i) => <div key={i} className="rounded-2xl animate-pulse" style={{ height: 340, backgroundColor: "white" }} />)}</div>
             ) : reports.length === 0 ? (
               <div className="rounded-2xl p-8 text-center max-w-sm" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                 <p className="text-3xl mb-3">😿</p>
@@ -110,7 +110,7 @@ export default function MyLostPetsPage() {
                 <button onClick={() => navigate("/reports/new-lost")} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: "#F5A623" }}>+ New post</button>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {reports.map((r) => <LostCard key={r.id} report={r} onClick={() => navigate(`/reports/lost/${r.id}`)} />)}
               </div>
             )}

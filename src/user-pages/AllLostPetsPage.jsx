@@ -82,13 +82,13 @@ export default function AllLostPetsPage() {
       <Sidebar userName={userName} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
             <button onClick={() => navigate("/reports")} className="flex items-center gap-1 text-sm font-semibold mb-4" style={{ color: "#6B5E52" }}>‹ Back to Reports</button>
             <h1 className="text-2xl font-black mb-1" style={{ color: "#3D2B1F" }}>All lost pets</h1>
             <p className="text-sm mb-5" style={{ color: "#9B8778" }}>All lost pets posted by the community near Melaka</p>
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+              <div className="flex gap-2 flex-wrap">
                 {FILTERS.map((f) => (
                   <button key={f} onClick={() => setActiveFilter(f)} className="px-4 py-2 rounded-full text-sm font-bold transition"
                     style={{ backgroundColor: activeFilter === f ? "#F5A623" : "white", color: activeFilter === f ? "white" : "#6B5E52", border: activeFilter === f ? "none" : "1.5px solid #EEE8E0" }}>
@@ -96,10 +96,10 @@ export default function AllLostPetsPage() {
                   </button>
                 ))}
               </div>
-              <p className="text-sm font-semibold" style={{ color: "#9B8778" }}>{filtered.length} result{filtered.length !== 1 ? "s" : ""}</p>
+              <p className="text-sm font-semibold shrink-0" style={{ color: "#9B8778" }}>{filtered.length} result{filtered.length !== 1 ? "s" : ""}</p>
             </div>
             {loading ? (
-              <div className="grid grid-cols-3 gap-4">{[1,2,3,4,5,6].map((i) => <div key={i} className="rounded-2xl animate-pulse" style={{ height: 340, backgroundColor: "white" }} />)}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{[1,2,3,4,5,6].map((i) => <div key={i} className="rounded-2xl animate-pulse" style={{ height: 340, backgroundColor: "white" }} />)}</div>
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16">
                 <p className="text-3xl mb-3">😿</p>
@@ -107,7 +107,7 @@ export default function AllLostPetsPage() {
                 <p className="text-sm" style={{ color: "#9B8778" }}>Try a different filter</p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filtered.map((r) => <LostCard key={r.id} report={r} onClick={() => navigate(`/reports/lost/${r.id}`)} />)}
               </div>
             )}

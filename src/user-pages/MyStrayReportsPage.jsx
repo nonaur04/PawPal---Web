@@ -87,7 +87,7 @@ export default function MyStrayReportsPage() {
       <Sidebar userName={userName} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
             <button onClick={() => navigate("/reports")} className="flex items-center gap-1 text-sm font-semibold mb-4" style={{ color: "#6B5E52" }}>‹ Back to Reports</button>
             <div className="flex items-center gap-3 mb-1">
@@ -95,7 +95,7 @@ export default function MyStrayReportsPage() {
               <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#FFF3E0", color: "#F5A623" }}>You</span>
             </div>
             <p className="text-sm mb-6" style={{ color: "#9B8778" }}>Every stray you've reported and its current status</p>
-            <div className="grid grid-cols-3 gap-4 mb-6 max-w-2xl">
+            <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 max-w-2xl">
               {[{ value: reports.length, label: "Reported" }, { value: active.length, label: "Active" }, { value: resolved.length, label: "Resolved" }].map((s) => (
                 <div key={s.label} className="rounded-2xl p-5 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                   <p className="text-3xl font-black mb-1" style={{ color: "#F5A623" }}>{s.value}</p>
@@ -116,7 +116,7 @@ export default function MyStrayReportsPage() {
                   {reports.map((r) => <StrayRow key={r.id} report={r} onClick={() => navigate(`/reports/stray/${r.id}`)} />)}
                 </div>
               )}
-          </div> 
+          </div>
         </main>
       </div>
     </div>

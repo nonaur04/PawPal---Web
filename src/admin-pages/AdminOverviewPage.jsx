@@ -1,67 +1,57 @@
-// src/pages/AdminOverviewPage.jsx
-import React from "react";
+// src/admin-pages/AdminOverviewPage.jsx
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase/firebase";
 import AdminSidebar from "../components/AdminSidebar";
 
-/*
-  DATA
-  ----
-  Everything the page shows is assembled in `overview` below. Right now it holds
-  sample values that match the mockup so the page renders fully on paste.
+/* ----------------------------------------------------------------
+   ADJUST THESE IF YOUR FIELD NAMES DIFFER
+   - APPROVED_STATUSES: which `status` values on an application count
+     as a completed adoption.
+   - Shelter verification lives on the user doc as `verificationStatus`:
+       "pending"  -> waiting in queue (shown as "Pending review")
+       "review"   -> admin looking at it (shown as "In review")
+       "approved" -> verified, counts as an active shelter
+       "rejected" -> denied, out of the queue
+     A shelter with NO verificationStatus is treated as approved/active.
+------------------------------------------------------------------- */
+const APPROVED_STATUSES = ["approved", "accepted", "adopted", "completed"];
+const SLA_HOURS = 48;
+const ADMIN_NAME = "Liyana Afiera";
 
-  To go live, replace these fields with Firestore queries (see the notes next to
-  each block). Nothing else in the component needs to change.
-*/
-const overview = {
-  // subtitle under the title. Kept Malaysia-wide to match the report scope.
-  dateLabel: "Tuesday, 1 September 2026 · all shelters, Malaysia",
-
-  kpis: {
-    // pendingVerifications: count of shelter users with verificationStatus in
-    //   ["pending", "awaiting_docs"]
-    pendingVerifications: 5,
-    pendingSub: "2 awaiting documents",
-    // activeShelters: count of shelter users with verificationStatus === "verified"
-    activeShelters: 34,
-    activeSheltersSub: "412 pets listed", // count of docs in `pets`
-    // adoptionsThisMonth: applications approved within the current month
-    adoptionsThisMonth: 68,
-    adoptionsSub: "+14% vs last month",
-    avgReviewTime: "19h",
-    avgReviewSub: "Target: under 48h",
-  },
-
-  // oldest shelter still waiting past the review target. null hides the banner.
-  slaAlert: { name: "Kucing Kita Collective", days: 6, pets: 6 },
-
-  // shelter users needing review, oldest first
-  queue: [
-    { id: "1", name: "Kucing Kita Collective", place: "Alor Gajah, Melaka", ago: "6 days ago", status: "Pending review" },
-    { id: "2", name: "Furry Friends Foundation", place: "Klebang, Melaka", ago: "5 days ago", status: "Awaiting docs" },
-    { id: "3", name: "Second Chance Animal Rescue", place: "Bukit Beruang, Melaka", ago: "3 days ago", status: "Pending review" },
-    { id: "4", name: "Melaka Paws Sanctuary", place: "Ayer Keroh, Melaka", ago: "2 days ago", status: "Pending review" },
-    { id: "5", name: "Hope Haven Shelter", place: "Masjid Tanah, Melaka", ago: "1 day ago", status: "Pending review" },
-  ],
-
-  // applications received per day, last 30 days (values 0..1 for bar height)
-  inbound: [
-    0.35, 0.22, 0.4, 0.3, 0.5, 0.28, 0.34, 0.6, 0.42, 0.55, 0.38, 0.7, 0.33,
-    0.48, 0.3, 0.44, 0.52, 0.36, 0.58, 0.4, 0.34, 0.62, 0.46, 0.5, 0.42,
-    0.9, 0.72, 0.98, 0.68, 0.82,
-  ],
-  inboundHighlightFrom: 25, // bars from this index are "this week" (orange)
-
-  activity: [
-    { type: "approve", actor: "Faiz Rahman", verb: "approved", target: "Melaka Animal Haven", ago: "3 weeks ago" },
-    { type: "doc", actor: "Faiz Rahman", verb: "requested documents from", target: "Furry Friends Foundation", ago: "2 days ago" },
-    { type: "sla", actor: "System", verb: "flagged SLA risk on", target: "Furry Friends Foundation", ago: "1 day ago" },
-    { type: "submit", actor: "Hope Haven Shelter", verb: "submitted an application", target: "80-pet capacity", ago: "1 day ago" },
-    { type: "reject", actor: "Faiz Rahman", verb: "rejected", target: "Pet Rescue Squad MY", ago: "1 month ago" },
-  ],
-};
+/* ---------- helpers ---------- */
+function toDate(v) {
+  if (!v) return null;
+  if (typeof v.toDate === "function") return v.toDate();
+  if (v.seconds) return new Date(v.seconds * 1000);
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+}
+function agoLabel(date) {
+  if (!date) return "";
+  const ms = Date.now() - date.getTime();
+  const days = Math.floor(ms / 86400000);
+  if (days <= 0) {
+    const h = Math.floor(ms / 3600000);
+    return h <= 1 ? "today" : `${h} hours ago`;
+  }
+  if (days === 1) return "1 day ago";
+  if (days < 7) return `${days} days ago`;
+  const w = Math.floor(days / 7);
+  if (w < 5) return w === 1 ? "1 week ago" : `${w} weeks ago`;
+  const mo = Math.floor(days / 30);
+  return mo === 1 ? "1 month ago" : `${mo} months ago`;
+}
+function sameMonth(date, ref) {
+  return (
+    date &&
+    date.getMonth() === ref.getMonth() &&
+    date.getFullYear() === ref.getFullYear()
+  );
+}
 
 /* ---------- small pieces ---------- */
-
 function StatusBadge({ status }) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-[#EFE4D2] bg-[#FBF6ED] px-3 py-1 text-xs font-bold text-[#8A6A3A]">
@@ -70,14 +60,11 @@ function StatusBadge({ status }) {
     </span>
   );
 }
-
 function KpiCard({ label, value, sub, highlight }) {
   return (
     <div
       className={`rounded-3xl border p-5 ${
-        highlight
-          ? "border-[#F3D39A] bg-[#FCEBD0]"
-          : "border-[#EFE9DF] bg-white"
+        highlight ? "border-[#F3D39A] bg-[#FCEBD0]" : "border-[#EFE9DF] bg-white"
       }`}
     >
       <div className="text-[11px] font-bold uppercase tracking-wider text-[#A08A6C]">
@@ -94,7 +81,6 @@ function KpiCard({ label, value, sub, highlight }) {
     </div>
   );
 }
-
 function QueueRow({ item, onReview }) {
   return (
     <button
@@ -114,7 +100,6 @@ function QueueRow({ item, onReview }) {
     </button>
   );
 }
-
 function InboundChart({ data, highlightFrom }) {
   return (
     <div className="mt-4">
@@ -136,7 +121,6 @@ function InboundChart({ data, highlightFrom }) {
     </div>
   );
 }
-
 function ActivityDot({ type }) {
   const map = {
     approve: { bg: "#E6F4EA", fg: "#2E9E5B", glyph: "✓" },
@@ -157,22 +141,177 @@ function ActivityDot({ type }) {
 }
 
 /* ---------- page ---------- */
-
 export default function AdminOverviewPage() {
   const navigate = useNavigate();
-  const k = overview.kpis;
-  const pastSla = overview.slaAlert ? 1 : 0;
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
 
-  const openReview = (item) => {
-    // send to the verification detail / queue. Adjust the path to your route.
-    navigate(`/admin/verification`);
-  };
+  useEffect(() => {
+    (async () => {
+      try {
+        const now = new Date();
+
+        // ----- shelters (from users) -----
+        const usersSnap = await getDocs(collection(db, "users"));
+        const shelters = usersSnap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((u) => u.role === "shelter")
+          .map((u) => ({
+            id: u.id,
+            name: u.orgName || u.fullName || u.name || "Unnamed shelter",
+            place: u.location || u.city || u.state || "Malaysia",
+            status: u.verificationStatus || null,
+            created: toDate(u.createdAt),
+            verifiedAt: toDate(u.verifiedAt),
+          }));
+
+        // missing status is grandfathered in as approved/active
+        const isActive = (s) => (s.status ? s.status === "approved" : true);
+        const inQueue = (s) => s.status === "pending" || s.status === "review";
+
+        const queueList = shelters
+          .filter(inQueue)
+          .sort(
+            (a, b) => (a.created?.getTime() || 0) - (b.created?.getTime() || 0)
+          );
+        const reviewCount = queueList.filter((s) => s.status === "review").length;
+        const activeShelters = shelters.filter(isActive).length;
+
+        let pendingSub;
+        if (queueList.length === 0) pendingSub = "queue is clear";
+        else if (reviewCount > 0) pendingSub = `${reviewCount} in review`;
+        else pendingSub = "awaiting first review";
+
+        // ----- pets -----
+        const petsSnap = await getDocs(collection(db, "pets"));
+        const petsCount = petsSnap.size;
+
+        // ----- applications -----
+        const appsSnap = await getDocs(collection(db, "applications"));
+        const apps = appsSnap.docs
+          .map((d) => d.data())
+          .map((a) => ({
+            status: (a.status || "").toLowerCase(),
+            created: toDate(a.createdAt),
+          }));
+
+        const lastMonthRef = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const approvedThisMonth = apps.filter(
+          (a) => APPROVED_STATUSES.includes(a.status) && sameMonth(a.created, now)
+        ).length;
+        const approvedLastMonth = apps.filter(
+          (a) =>
+            APPROVED_STATUSES.includes(a.status) &&
+            sameMonth(a.created, lastMonthRef)
+        ).length;
+
+        let adoptionsSub;
+        if (approvedLastMonth > 0) {
+          const pct = Math.round(
+            ((approvedThisMonth - approvedLastMonth) / approvedLastMonth) * 100
+          );
+          adoptionsSub = `${pct >= 0 ? "+" : ""}${pct}% vs last month`;
+        } else if (approvedThisMonth > 0) {
+          adoptionsSub = "new this month";
+        } else {
+          adoptionsSub = "no adoptions yet";
+        }
+
+        // ----- inbound volume (applications per day, last 30 days) -----
+        const buckets = new Array(30).fill(0);
+        apps.forEach((a) => {
+          if (!a.created) return;
+          const diff = Math.floor((now - a.created) / 86400000);
+          if (diff >= 0 && diff < 30) buckets[29 - diff] += 1;
+        });
+        const maxB = Math.max(1, ...buckets);
+        const inbound = buckets.map((v) => v / maxB);
+
+        // ----- SLA -----
+        const overdue = queueList.filter(
+          (s) => s.created && (now - s.created) / 3600000 > SLA_HOURS
+        );
+        const oldest = queueList[0];
+        let slaAlert = null;
+        if (oldest && oldest.created && (now - oldest.created) / 3600000 > SLA_HOURS) {
+          slaAlert = {
+            name: oldest.name,
+            days: Math.floor((now - oldest.created) / 86400000),
+          };
+        }
+
+        // ----- recent activity (derived from newest shelters + applications) -----
+        const activity = shelters
+          .filter((s) => s.status) // only shelters that entered the verification flow
+          .map((s) => {
+            let type = "submit";
+            let verb = "applied for verification";
+            let date = s.created;
+            if (s.status === "approved") {
+              type = "approve";
+              verb = "was approved";
+              date = s.verifiedAt || s.created;
+            } else if (s.status === "rejected") {
+              type = "reject";
+              verb = "was rejected";
+              date = s.verifiedAt || s.created;
+            } else if (s.status === "review") {
+              verb = "is under review";
+            }
+            return { type, actor: s.name, verb, date };
+          })
+          .filter((a) => a.date)
+          .sort((x, y) => y.date - x.date)
+          .slice(0, 5)
+          .map((a) => ({ ...a, ago: agoLabel(a.date) }));
+
+        const dateLabel =
+          now.toLocaleDateString("en-GB", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          }) + " · all shelters, Malaysia";
+
+        setData({
+          dateLabel,
+          kpis: {
+            pendingVerifications: queueList.length,
+            pendingSub,
+            activeShelters,
+            activeSheltersSub: `${petsCount} pets listed`,
+            adoptionsThisMonth: approvedThisMonth,
+            adoptionsSub,
+          },
+          slaAlert,
+          pastSla: overdue.length,
+          queue: queueList.map((s) => ({
+            id: s.id,
+            name: s.name,
+            place: s.place,
+            ago: agoLabel(s.created),
+            status: s.status === "review" ? "In review" : "Pending review",
+          })),
+          inbound,
+          inboundHighlightFrom: 25,
+          activity,
+        });
+      } catch (e) {
+        console.error("Admin overview load failed:", e);
+        setData({ error: true });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const openReview = () => navigate("/admin/verification");
 
   return (
     <div className="flex min-h-screen bg-[#F5F0E8] text-[#2A2118]">
       <AdminSidebar
-        adminName="Faiz Rahman"
-        pendingCount={overview.kpis.pendingVerifications}
+        adminName={ADMIN_NAME}
+        pendingCount={data?.kpis?.pendingVerifications || 0}
       />
 
       <main className="flex-1 overflow-y-auto px-8 py-6">
@@ -184,9 +323,9 @@ export default function AdminOverviewPage() {
           </span>
 
           <div className="flex items-center gap-4">
-            {pastSla > 0 && (
+            {data?.pastSla > 0 && (
               <span className="flex items-center gap-2 text-sm font-bold text-[#C0442F]">
-                ⏰ {pastSla} review past SLA
+                ⏰ {data.pastSla} review{data.pastSla > 1 ? "s" : ""} past SLA
               </span>
             )}
             <div className="flex items-center gap-2.5 rounded-full border border-[#EFE9DF] bg-white py-1 pl-1 pr-4 shadow-sm">
@@ -196,7 +335,7 @@ export default function AdminOverviewPage() {
                 </svg>
               </span>
               <div className="leading-tight">
-                <div className="text-sm font-bold">Faiz Rahman</div>
+                <div className="text-sm font-bold">{ADMIN_NAME}</div>
                 <div className="text-xs text-[#9A8B76]">Platform Admin</div>
               </div>
             </div>
@@ -206,91 +345,111 @@ export default function AdminOverviewPage() {
         {/* title */}
         <h1 className="text-3xl font-extrabold">Platform overview</h1>
         <p className="mt-1 text-sm font-medium text-[#9A8B76]">
-          {overview.dateLabel}
+          {loading ? "Loading live data…" : data?.dateLabel}
         </p>
 
-        {/* KPIs */}
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard label="Pending verifications" value={k.pendingVerifications} sub={k.pendingSub} highlight />
-          <KpiCard label="Active shelters" value={k.activeShelters} sub={k.activeSheltersSub} />
-          <KpiCard label="Adoptions this month" value={k.adoptionsThisMonth} sub={k.adoptionsSub} />
-          <KpiCard label="Avg. review time" value={k.avgReviewTime} sub={k.avgReviewSub} />
-        </div>
-
-        {/* SLA banner */}
-        {overview.slaAlert && (
-          <div className="mt-4 flex items-center justify-between gap-4 rounded-3xl border border-[#F3D6D0] bg-[#FCEBEA] px-5 py-4">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">⏰</span>
-              <div>
-                <div className="font-bold text-[#9B3B2E]">
-                  {overview.slaAlert.name} has been waiting {overview.slaAlert.days} days
-                </div>
-                <div className="text-sm text-[#B26A5F]">
-                  {overview.slaAlert.pets} pets can't be listed until this shelter is verified. Review target is 48 hours.
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => navigate("/admin/verification")}
-              className="shrink-0 rounded-2xl bg-[#A94436] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#93372B]"
-            >
-              Review now
-            </button>
+        {loading ? (
+          <div className="mt-10 text-center text-sm font-medium text-[#9A8B76]">
+            Fetching shelters, pets and applications…
           </div>
-        )}
-
-        {/* two-column body */}
-        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
-          {/* verification queue */}
-          <div className="rounded-3xl border border-[#EFE9DF] bg-white p-5">
-            <div className="mb-1 flex items-start justify-between">
-              <div>
-                <h2 className="text-lg font-extrabold">Verification queue</h2>
-                <p className="text-sm text-[#9A8B76]">
-                  Oldest first, these block shelters from listing pets
-                </p>
-              </div>
-              <button
-                onClick={() => navigate("/admin/verification")}
-                className="text-sm font-bold text-[#C2650B] hover:underline"
-              >
-                Open queue →
-              </button>
-            </div>
-            <div className="mt-2 divide-y divide-[#F1EBE0]">
-              {overview.queue.map((item) => (
-                <QueueRow key={item.id} item={item} onReview={openReview} />
-              ))}
-            </div>
+        ) : data?.error ? (
+          <div className="mt-6 rounded-3xl border border-[#F3D6D0] bg-[#FCEBEA] px-5 py-4 text-sm font-medium text-[#9B3B2E]">
+            Couldn't load data. Check the browser console for details.
           </div>
-
-          {/* right column */}
-          <div className="flex flex-col gap-4">
-            <div className="rounded-3xl border border-[#EFE9DF] bg-white p-5">
-              <h2 className="text-lg font-extrabold">Inbound volume</h2>
-              <p className="text-sm text-[#9A8B76]">Applications received, last 30 days</p>
-              <InboundChart data={overview.inbound} highlightFrom={overview.inboundHighlightFrom} />
+        ) : (
+          <>
+            {/* KPIs */}
+            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <KpiCard label="Pending verifications" value={data.kpis.pendingVerifications} sub={data.kpis.pendingSub} highlight />
+              <KpiCard label="Active shelters" value={data.kpis.activeShelters} sub={data.kpis.activeSheltersSub} />
+              <KpiCard label="Adoptions this month" value={data.kpis.adoptionsThisMonth} sub={data.kpis.adoptionsSub} />
             </div>
 
-            <div className="rounded-3xl border border-[#EFE9DF] bg-white p-5">
-              <h2 className="mb-3 text-lg font-extrabold">Recent activity</h2>
-              <div className="flex flex-col gap-3.5">
-                {overview.activity.map((a, i) => (
-                  <div key={i} className="flex gap-3">
-                    <ActivityDot type={a.type} />
-                    <div className="text-sm leading-snug">
-                      <span className="font-bold">{a.actor}</span>{" "}
-                      <span className="text-[#6B6153]">{a.verb}</span>{" "}
-                      <span className="font-bold">{a.target}</span>
-                      <div className="text-xs text-[#A08A6C]">{a.ago}</div>
+            {/* SLA banner */}
+            {data.slaAlert && (
+              <div className="mt-4 flex items-center justify-between gap-4 rounded-3xl border border-[#F3D6D0] bg-[#FCEBEA] px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">⏰</span>
+                  <div>
+                    <div className="font-bold text-[#9B3B2E]">
+                      {data.slaAlert.name} has been waiting {data.slaAlert.days} days
+                    </div>
+                    <div className="text-sm text-[#B26A5F]">
+                      This shelter can't list pets until it's approved. Review target is 48 hours.
                     </div>
                   </div>
-                ))}
+                </div>
+                <button
+                  onClick={() => navigate("/admin/verification")}
+                  className="shrink-0 rounded-2xl bg-[#A94436] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#93372B]"
+                >
+                  Review now
+                </button>
+              </div>
+            )}
+
+            {/* body */}
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
+              {/* verification queue */}
+              <div className="rounded-3xl border border-[#EFE9DF] bg-white p-5">
+                <div className="mb-1 flex items-start justify-between">
+                  <div>
+                    <h2 className="text-lg font-extrabold">Verification queue</h2>
+                    <p className="text-sm text-[#9A8B76]">
+                      Oldest first, these block shelters from listing pets
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate("/admin/verification")}
+                    className="text-sm font-bold text-[#C2650B] hover:underline"
+                  >
+                    Open queue →
+                  </button>
+                </div>
+                <div className="mt-2 divide-y divide-[#F1EBE0]">
+                  {data.queue.length === 0 ? (
+                    <div className="py-8 text-center text-sm font-medium text-[#9A8B76]">
+                      No shelters awaiting verification.
+                    </div>
+                  ) : (
+                    data.queue.map((item) => (
+                      <QueueRow key={item.id} item={item} onReview={openReview} />
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* right column */}
+              <div className="flex flex-col gap-4">
+                <div className="rounded-3xl border border-[#EFE9DF] bg-white p-5">
+                  <h2 className="text-lg font-extrabold">Inbound volume</h2>
+                  <p className="text-sm text-[#9A8B76]">Applications received, last 30 days</p>
+                  <InboundChart data={data.inbound} highlightFrom={data.inboundHighlightFrom} />
+                </div>
+
+                <div className="rounded-3xl border border-[#EFE9DF] bg-white p-5">
+                  <h2 className="mb-3 text-lg font-extrabold">Recent activity</h2>
+                  <div className="flex flex-col gap-3.5">
+                    {data.activity.length === 0 ? (
+                      <div className="text-sm font-medium text-[#9A8B76]">No recent activity.</div>
+                    ) : (
+                      data.activity.map((a, i) => (
+                        <div key={i} className="flex gap-3">
+                          <ActivityDot type={a.type} />
+                          <div className="text-sm leading-snug">
+                            <span className="font-bold">{a.actor}</span>{" "}
+                            <span className="text-[#6B6153]">{a.verb}</span>
+                            <div className="text-xs text-[#A08A6C]">{a.ago}</div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </main>
     </div>
   );

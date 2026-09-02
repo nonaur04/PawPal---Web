@@ -1,7 +1,7 @@
 export default function HeroBanner({ name }) {
   return (
     <div
-      className="relative rounded-2xl p-8 mb-6 overflow-hidden"
+      className="relative rounded-2xl p-6 sm:p-8 mb-6 overflow-hidden"
       style={{ backgroundColor: "#f0dbc3" }}
     >
       {/* Paw prints */}
@@ -29,7 +29,7 @@ export default function HeroBanner({ name }) {
       </div>
 
       <p className="text-sm font-semibold mb-2" style={{ color: "#9B8778" }}>Hello {name} !</p>
-      <h1 className="text-4xl font-black mb-3 leading-tight" style={{ color: "#3D2B1F" }}>
+      <h1 className="text-3xl sm:text-4xl font-black mb-3 leading-tight" style={{ color: "#3D2B1F" }}>
         Ready to meet your<br />new best friend?
       </h1>
       <p className="text-sm max-w-md leading-relaxed" style={{ color: "#7A6654" }}>

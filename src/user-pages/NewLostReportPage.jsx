@@ -44,7 +44,6 @@ export default function NewLostReportPage() {
     return () => unsub();
   }, []);
 
-  // Auto-detect location on mount
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -123,7 +122,7 @@ export default function NewLostReportPage() {
       <Sidebar userName={userName} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
 
             <button onClick={() => navigate("/reports")} className="flex items-center gap-1 text-sm font-semibold mb-4" style={{ color: "#6B5E52" }}>
@@ -136,10 +135,10 @@ export default function NewLostReportPage() {
             <div className="rounded-2xl p-5 mb-4" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
               <p className="font-black mb-1" style={{ color: "#3D2B1F" }}>Photos of your pet</p>
               <p className="text-xs mb-3" style={{ color: "#9B8778" }}>First photo is required. Second is optional.</p>
-              <div className="flex gap-3">
-                <label className="cursor-pointer rounded-xl overflow-hidden flex items-center justify-center flex-col gap-2"
+              <div className="flex flex-col sm:flex-row gap-3">
+                <label className="cursor-pointer rounded-xl overflow-hidden flex items-center justify-center flex-col gap-2 w-full sm:w-[280px]"
                   style={{
-                    width: 280, height: 180, flexShrink: 0,
+                    height: 180,
                     backgroundColor: "#F5EFE6",
                     backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(180,150,100,0.07) 10px, rgba(180,150,100,0.07) 20px)",
                     border: "1.5px dashed #D1C9C0",
@@ -151,9 +150,9 @@ export default function NewLostReportPage() {
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoChange(0, e.target.files[0])} />
                 </label>
 
-                <label className="cursor-pointer rounded-xl overflow-hidden flex items-center justify-center flex-col gap-2"
+                <label className="cursor-pointer rounded-xl overflow-hidden flex items-center justify-center flex-col gap-2 w-full sm:w-[180px]"
                   style={{
-                    width: 180, height: 180, flexShrink: 0,
+                    height: 180,
                     backgroundColor: "#F5EFE6",
                     backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(180,150,100,0.07) 10px, rgba(180,150,100,0.07) 20px)",
                     border: "1.5px dashed #D1C9C0",
@@ -168,7 +167,7 @@ export default function NewLostReportPage() {
             </div>
 
             {/* Map + Pet details */}
-            <div className="flex gap-4 mb-4">
+            <div className="flex flex-col lg:flex-row gap-4 mb-4">
               {/* Last seen map */}
               <div className="rounded-2xl p-5 flex-1" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                 <p className="font-black mb-3 flex items-center gap-2" style={{ color: "#3D2B1F" }}>
@@ -208,7 +207,6 @@ export default function NewLostReportPage() {
               <div className="rounded-2xl p-5 flex-1" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}>
                 <p className="font-black mb-4" style={{ color: "#3D2B1F" }}>About your pet</p>
 
-                {/* Pet name */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Pet name</label>
                   <input value={petName} onChange={(e) => setPetName(e.target.value)} placeholder="e.g. Milo"
@@ -216,7 +214,6 @@ export default function NewLostReportPage() {
                     style={{ border: "1.5px solid #EEE8E0", backgroundColor: "#FAFAFA", fontFamily: "'Nunito', sans-serif" }} />
                 </div>
 
-                {/* Species */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold mb-2" style={{ color: "#6B5E52" }}>Species</label>
                   <div className="flex gap-2 flex-wrap">
@@ -234,7 +231,6 @@ export default function NewLostReportPage() {
                   </div>
                 </div>
 
-                {/* Breed */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Breed / appearance</label>
                   <input value={breed} onChange={(e) => setBreed(e.target.value)} placeholder="e.g. Persian, orange tabby"
@@ -242,7 +238,6 @@ export default function NewLostReportPage() {
                     style={{ border: "1.5px solid #EEE8E0", backgroundColor: "#FAFAFA", fontFamily: "'Nunito', sans-serif" }} />
                 </div>
 
-                {/* Description */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Description</label>
                   <textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)}
@@ -251,7 +246,6 @@ export default function NewLostReportPage() {
                     style={{ border: "1.5px solid #EEE8E0", backgroundColor: "#FAFAFA", fontFamily: "'Nunito', sans-serif", color: "#3D2B1F" }} />
                 </div>
 
-                {/* Reward */}
                 <div>
                   <label className="block text-sm font-semibold mb-1.5" style={{ color: "#6B5E52" }}>Reward (optional)</label>
                   <div className="flex items-center rounded-xl overflow-hidden"
@@ -272,7 +266,6 @@ export default function NewLostReportPage() {
               </div>
             )}
 
-            {/* Actions */}
             <div className="flex justify-end gap-3">
               <button onClick={() => navigate("/reports")}
                 className="px-6 py-3 rounded-xl text-sm font-bold"
@@ -285,7 +278,7 @@ export default function NewLostReportPage() {
                 {submitting ? "Posting..." : "Post lost pet"}
               </button>
             </div>
-          </div>  
+          </div>
         </main>
       </div>
 
