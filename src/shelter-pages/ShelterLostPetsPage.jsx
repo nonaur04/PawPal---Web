@@ -35,6 +35,14 @@ function distanceKm(geoA, geoB) {
   return R * c;
 }
 
+// A report (or a shelter's own profile) may store coordinates in `location` (a GeoPoint)
+// or in `geoPoint`. `location` can also be a plain address string, so only use it when
+// it's a GeoPoint object.
+function resolveGeo(obj) {
+  if (obj?.location && typeof obj.location === "object" && obj.location.latitude != null) return obj.location;
+  return obj?.geoPoint || null;
+}
+
 export default function ShelterLostPetsPage() {
   const navigate = useNavigate();
   const user = auth.currentUser;
@@ -55,8 +63,7 @@ export default function ShelterLostPetsPage() {
       const shelterDoc = await getDoc(doc(db, "users", user.uid));
       let myGeo = null;
       if (shelterDoc.exists()) {
-        const data = shelterDoc.data();
-        if (data.geoPoint) myGeo = data.geoPoint;
+        myGeo = resolveGeo(shelterDoc.data());
       }
       setShelterGeo(myGeo);
 
@@ -87,7 +94,14 @@ export default function ShelterLostPetsPage() {
     }
   }
 
-  const filtered = reports.filter((r) => {
+  // Only reports within 30 km of the shelter. Reports with no geoPoint, or when
+  // the shelter has no saved location, are kept so nothing silently disappears.
+  const nearbyReports = reports.filter((r) => {
+    const km = distanceKm(shelterGeo, resolveGeo(r));
+    return km == null || km <= 30;
+  });
+
+  const filtered = nearbyReports.filter((r) => {
     const species = (r.species || "").toLowerCase();
     if (activeTab === "Urgent") return r.isUrgent;
     if (activeTab === "Cats") return species === "cat";
@@ -96,10 +110,10 @@ export default function ShelterLostPetsPage() {
   });
 
   const tabCounts = {
-    All: reports.length,
-    Urgent: reports.filter((r) => r.isUrgent).length,
-    Cats: reports.filter((r) => (r.species || "").toLowerCase() === "cat").length,
-    Dogs: reports.filter((r) => (r.species || "").toLowerCase() === "dog").length,
+    All: nearbyReports.length,
+    Urgent: nearbyReports.filter((r) => r.isUrgent).length,
+    Cats: nearbyReports.filter((r) => (r.species || "").toLowerCase() === "cat").length,
+    Dogs: nearbyReports.filter((r) => (r.species || "").toLowerCase() === "dog").length,
   };
 
   if (loading) {
@@ -173,7 +187,7 @@ export default function ShelterLostPetsPage() {
                 const emoji = SPECIES_EMOJI[species] || "🐾";
                 const hasPhoto = (r.photoUrls?.length > 0) || r.photoUrl;
                 const photo = r.photoUrls?.[0] || r.photoUrl;
-                const km = distanceKm(shelterGeo, r.geoPoint);
+                const km = distanceKm(shelterGeo, resolveGeo(r));
                 const isSearching = (r.status || "active").toLowerCase() !== "found" && (r.status || "").toLowerCase() !== "reunited";
 
                 return (

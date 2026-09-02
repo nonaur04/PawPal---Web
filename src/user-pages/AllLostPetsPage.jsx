@@ -9,6 +9,26 @@ import TopBar from "../components/TopBar";
 const SPECIES_BG = { dog: "#F9BFBF", cat: "#F9BFBF", rabbit: "#F2C4A0", bird: "#C4E0F2", others: "#D4F2C4" };
 const SPECIES_EMOJI = { dog: "🐕", cat: "🐱", rabbit: "🐇", bird: "🦜", others: "🐾" };
 
+// Distance in km between the viewer ({lat,lng}) and a report's GeoPoint ({latitude,longitude}).
+// Returns null when either side is missing so the report is kept rather than hidden.
+function distanceFromUser(user, geo) {
+  if (!user || !geo) return null;
+  const lat2 = geo.latitude, lon2 = geo.longitude;
+  if (lat2 == null || lon2 == null) return null;
+  const R = 6371;
+  const dLat = (lat2 - user.lat) * Math.PI / 180;
+  const dLon = (lon2 - user.lng) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(user.lat * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// A report may store its coordinates in `location` (a GeoPoint) or in `geoPoint`.
+// `location` can also be a plain address string, so only use it when it's a GeoPoint object.
+function reportGeo(r) {
+  if (r.location && typeof r.location === "object" && r.location.latitude != null) return r.location;
+  return r.geoPoint || null;
+}
+
 function timeAgo(timestamp) {
   if (!timestamp) return "";
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -54,6 +74,7 @@ export default function AllLostPetsPage() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("All");
   const [userName, setUserName] = useState("");
+  const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -71,9 +92,24 @@ export default function AllLostPetsPage() {
     return () => unsub();
   }, []);
 
+  // Get the viewer's location so we can keep only nearby reports
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => setUserLocation(null)
+      );
+    }
+  }, []);
+
   const filtered = reports.filter((r) => {
-    if (activeFilter === "With reward") return !!r.reward;
-    if (activeFilter === "No reward") return !r.reward;
+    // Reward filter
+    if (activeFilter === "With reward" && !r.reward) return false;
+    if (activeFilter === "No reward" && r.reward) return false;
+
+    // Keep only reports within 30 km (kept when location is unknown)
+    const km = distanceFromUser(userLocation, reportGeo(r));
+    if (km != null && km > 30) return false;
     return true;
   });
 
@@ -86,7 +122,7 @@ export default function AllLostPetsPage() {
           <div className="mx-auto" style={{ maxWidth: 1100 }}>
             <button onClick={() => navigate("/reports")} className="flex items-center gap-1 text-sm font-semibold mb-4" style={{ color: "#6B5E52" }}>‹ Back to Reports</button>
             <h1 className="text-2xl font-black mb-1" style={{ color: "#3D2B1F" }}>All lost pets</h1>
-            <p className="text-sm mb-5" style={{ color: "#9B8778" }}>All lost pets posted by the community near Melaka</p>
+            <p className="text-sm mb-5" style={{ color: "#9B8778" }}>Lost pets posted by the community within 30 km of you</p>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
               <div className="flex gap-2 flex-wrap">
                 {FILTERS.map((f) => (

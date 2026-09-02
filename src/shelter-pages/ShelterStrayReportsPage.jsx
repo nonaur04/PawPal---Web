@@ -34,6 +34,14 @@ function distanceKm(geoA, geoB) {
   return R * c;
 }
 
+// A report (or a shelter's own profile) may store coordinates in `location` (a GeoPoint)
+// or in `geoPoint`. `location` can also be a plain address string, so only use it when
+// it's a GeoPoint object.
+function resolveGeo(obj) {
+  if (obj?.location && typeof obj.location === "object" && obj.location.latitude != null) return obj.location;
+  return obj?.geoPoint || null;
+}
+
 function StatusPill({ status }) {
   const map = {
     pending: { bg: "#FEF3C7", color: "#92400E", label: "pending" },
@@ -69,8 +77,7 @@ export default function ShelterStrayReportsPage() {
       const shelterDoc = await getDoc(doc(db, "users", user.uid));
       let myGeo = null;
       if (shelterDoc.exists()) {
-        const data = shelterDoc.data();
-        if (data.geoPoint) myGeo = data.geoPoint;
+        myGeo = resolveGeo(shelterDoc.data());
       }
       setShelterGeo(myGeo);
 
@@ -97,15 +104,22 @@ export default function ShelterStrayReportsPage() {
     }
   }
 
+  // Only reports within 30 km of the shelter. Reports with no geoPoint, or when
+  // the shelter has no saved location, are kept so nothing silently disappears.
+  const nearbyReports = reports.filter((r) => {
+    const km = distanceKm(shelterGeo, resolveGeo(r));
+    return km == null || km <= 30;
+  });
+
   const filtered = activeTab === "All"
-    ? reports
-    : reports.filter((r) => (r.status || "pending").toLowerCase() === activeTab.toLowerCase());
+    ? nearbyReports
+    : nearbyReports.filter((r) => (r.status || "pending").toLowerCase() === activeTab.toLowerCase());
 
   const tabCounts = {
-    All: reports.length,
-    Pending: reports.filter((r) => (r.status || "pending").toLowerCase() === "pending").length,
-    "In progress": reports.filter((r) => (r.status || "").toLowerCase() === "in progress").length,
-    Resolved: reports.filter((r) => (r.status || "").toLowerCase() === "resolved").length,
+    All: nearbyReports.length,
+    Pending: nearbyReports.filter((r) => (r.status || "pending").toLowerCase() === "pending").length,
+    "In progress": nearbyReports.filter((r) => (r.status || "").toLowerCase() === "in progress").length,
+    Resolved: nearbyReports.filter((r) => (r.status || "").toLowerCase() === "resolved").length,
   };
 
   if (loading) {
@@ -176,7 +190,7 @@ export default function ShelterStrayReportsPage() {
                 const reporter = userMap[r.reporterId] || {};
                 const reporterName = reporter.fullName || reporter.name || "Anonymous";
                 const emoji = ANIMAL_EMOJI[(r.animalType || "").toLowerCase()] || "🐾";
-                const km = distanceKm(shelterGeo, r.geoPoint);
+                const km = distanceKm(shelterGeo, resolveGeo(r));
                 const assignedToName = r.assignedToName || (r.assignedTo ? "Team member" : null);
 
                 return (

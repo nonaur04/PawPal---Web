@@ -161,6 +161,7 @@ export default function VetNearMePage() {
   const [areaName, setAreaName] = useState("Melaka");
   const [filter, setFilter] = useState("all"); // "all" | "open" | "24/7"
   const [usedFallback, setUsedFallback] = useState(false);
+  const [locationError, setLocationError] = useState(null); // null | "denied" | "timeout" | "unavailable" | "unsupported"
   const markersRef = useRef([]);
 
   useEffect(() => {
@@ -172,17 +173,30 @@ export default function VetNearMePage() {
     loadMapsScript(() => {
       const defaultCoords = { lat: 2.2261, lng: 102.3285 };
       initMapAndSearch(defaultCoords);
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            setUserLocation(coords);
-            initMapAndSearch(coords);
-          },
-          () => initMapAndSearch(defaultCoords),
-          { timeout: 8000 }
-        );
+
+      if (!navigator.geolocation) {
+        console.warn("[VetNearMe] Geolocation is not supported by this browser.");
+        setLocationError("unsupported");
+        return;
       }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLocation(coords);
+          setLocationError(null);
+          initMapAndSearch(coords);
+        },
+        (err) => {
+          // err.code: 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
+          console.error("[VetNearMe] Geolocation failed:", err.code, err.message);
+          setLocationError(
+            err.code === 1 ? "denied" : err.code === 3 ? "timeout" : "unavailable"
+          );
+          initMapAndSearch(defaultCoords);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      );
     });
   }, []);
 
@@ -403,6 +417,17 @@ export default function VetNearMePage() {
                   ? `No clinics within 15km — showing the closest ${vets.length} (prioritizing open clinics)`
                   : `Trusted clinics near ${areaName}`}
               </p>
+              {locationError && (
+                <p className="text-sm mt-1" style={{ color: "#EF4444" }}>
+                  {locationError === "denied"
+                    ? "Location access is blocked, so results are shown for Melaka by default. Click the location icon in your browser's address bar, allow access for this site, then refresh."
+                    : locationError === "timeout"
+                    ? "Could not get your location in time, so results are shown for Melaka by default. Refresh to try again."
+                    : locationError === "unsupported"
+                    ? "Your browser does not support location, so results are shown for Melaka by default."
+                    : "Could not detect your location, so results are shown for Melaka by default. Make sure location is on and the site is served over https or localhost."}
+                </p>
+              )}
             </div>
 
             {/* Filter toggle */}

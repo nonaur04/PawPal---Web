@@ -9,6 +9,26 @@ import TopBar from "../components/TopBar";
 const SPECIES_BG = { dog: "#F9BFBF", cat: "#F9BFBF", rabbit: "#F2C4A0", bird: "#C4E0F2", others: "#D4F2C4" };
 const SPECIES_EMOJI = { dog: "🐕", cat: "🐱", rabbit: "🐇", bird: "🦜", others: "🐾" };
 
+// Distance in km between the viewer ({lat,lng}) and a report's GeoPoint ({latitude,longitude}).
+// Returns null when either side is missing so the report is kept rather than hidden.
+function distanceFromUser(user, geo) {
+  if (!user || !geo) return null;
+  const lat2 = geo.latitude, lon2 = geo.longitude;
+  if (lat2 == null || lon2 == null) return null;
+  const R = 6371;
+  const dLat = (lat2 - user.lat) * Math.PI / 180;
+  const dLon = (lon2 - user.lng) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(user.lat * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// A report may store its coordinates in `location` (a GeoPoint) or in `geoPoint`.
+// `location` can also be a plain address string, so only use it when it's a GeoPoint object.
+function reportGeo(r) {
+  if (r.location && typeof r.location === "object" && r.location.latitude != null) return r.location;
+  return r.geoPoint || null;
+}
+
 function timeAgo(timestamp) {
   if (!timestamp) return "";
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -93,6 +113,7 @@ export default function ReportsPage() {
   const [allStrayReports, setAllStrayReports] = useState([]);
   const [myLostReports, setMyLostReports] = useState([]);
   const [allLostReports, setAllLostReports] = useState([]);
+  const [userLocation, setUserLocation] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -116,6 +137,27 @@ export default function ReportsPage() {
     });
     return () => unsub();
   }, []);
+
+  // Get the viewer's location so the "All Reports" community lists stay nearby
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => setUserLocation(null)
+      );
+    }
+  }, []);
+
+  // "All Reports" community lists, limited to within 30 km of the viewer.
+  // Reports with no geoPoint, or when location is unknown, are kept.
+  const nearbyAllStray = allStrayReports.filter((r) => {
+    const km = distanceFromUser(userLocation, reportGeo(r));
+    return km == null || km <= 30;
+  });
+  const nearbyAllLost = allLostReports.filter((r) => {
+    const km = distanceFromUser(userLocation, reportGeo(r));
+    return km == null || km <= 30;
+  });
 
   const tabs = [
     { key: "stray", label: "Stray reports", emoji: "🚨" },
@@ -166,8 +208,8 @@ export default function ReportsPage() {
                     <button onClick={() => navigate("/reports/all-strays")} className="text-sm font-bold flex items-center gap-1 shrink-0" style={{ color: "#F5A623" }}>View all ›</button>
                   </div>
                   {loading ? <div className="space-y-3">{[1,2,3].map((i) => <div key={i} className="rounded-2xl h-20 animate-pulse" style={{ backgroundColor: "white" }} />)}</div>
-                    : allStrayReports.length === 0 ? <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}><p className="text-sm" style={{ color: "#9B8778" }}>No community reports yet.</p></div>
-                    : <div className="space-y-3">{allStrayReports.map((r) => <StrayRow key={r.id} report={r} isOwn={false} onClick={() => navigate(`/reports/stray/${r.id}`)} />)}</div>}
+                    : nearbyAllStray.length === 0 ? <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}><p className="text-sm" style={{ color: "#9B8778" }}>No community reports nearby yet.</p></div>
+                    : <div className="space-y-3">{nearbyAllStray.map((r) => <StrayRow key={r.id} report={r} isOwn={false} onClick={() => navigate(`/reports/stray/${r.id}`)} />)}</div>}
                 </div>
               </div>
             )}
@@ -196,8 +238,8 @@ export default function ReportsPage() {
                     <button onClick={() => navigate("/reports/all-lost")} className="text-sm font-bold flex items-center gap-1 shrink-0" style={{ color: "#F5A623" }}>View all ›</button>
                   </div>
                   {loading ? <div className="flex gap-4">{[1,2,3].map((i) => <div key={i} className="rounded-2xl animate-pulse w-full sm:w-[320px]" style={{ height: 340, backgroundColor: "white" }} />)}</div>
-                    : allLostReports.length === 0 ? <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}><p className="text-sm" style={{ color: "#9B8778" }}>No community lost pet posts yet.</p></div>
-                    : <div className="flex gap-4 flex-wrap">{allLostReports.map((r) => <LostCard key={r.id} report={r} isOwn={false} onClick={() => navigate(`/reports/lost/${r.id}`)} />)}</div>}
+                    : nearbyAllLost.length === 0 ? <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "white", border: "1px solid #EEE8E0" }}><p className="text-sm" style={{ color: "#9B8778" }}>No community lost pet posts nearby yet.</p></div>
+                    : <div className="flex gap-4 flex-wrap">{nearbyAllLost.map((r) => <LostCard key={r.id} report={r} isOwn={false} onClick={() => navigate(`/reports/lost/${r.id}`)} />)}</div>}
                 </div>
               </div>
             )}
